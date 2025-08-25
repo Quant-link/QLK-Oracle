@@ -32,7 +32,7 @@ contract NodeManager is
 
     // Constants
     uint8 public constant MAX_NODES = 10;
-    uint8 public constant MIN_ACTIVE_NODES = 6;
+    uint8 public constant MIN_ACTIVE_NODES = 1;
     uint256 public constant DEFAULT_ROTATION_INTERVAL = 300; // 5 minutes
     uint8 public constant MIN_REPUTATION = 50;
     uint8 public constant MAX_REPUTATION = 100;

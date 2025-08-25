@@ -474,7 +474,16 @@ contract QuantlinkOracle is
      * @dev Adds a new oracle node (admin only)
      */
     function addNode(address node) external override onlyRole(ADMIN_ROLE) {
-        nodeManager.registerNode(node, "");
+        // Check if node is already registered
+        try nodeManager.getNode(node) returns (INodeManager.OracleNode memory existingNode) {
+            // Node exists, just grant role
+            if (existingNode.nodeAddress == address(0)) {
+                nodeManager.registerNode(node, "");
+            }
+        } catch {
+            // Node doesn't exist, register it
+            nodeManager.registerNode(node, "");
+        }
         _grantRole(NODE_MANAGER_ROLE, node);
     }
 

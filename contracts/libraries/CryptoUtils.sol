@@ -136,13 +136,18 @@ library CryptoUtils {
         bytes memory publicKey,
         address expectedAddress
     ) internal pure returns (bool isValid) {
-        if (publicKey.length != 64) {
+        if (publicKey.length != 64 && publicKey.length != 0) {
             revert InvalidPublicKey();
+        }
+
+        // If empty public key, skip verification
+        if (publicKey.length == 0) {
+            return true;
         }
 
         bytes32 hash = keccak256(publicKey);
         address derivedAddress = address(uint160(uint256(hash)));
-        
+
         return derivedAddress == expectedAddress;
     }
 

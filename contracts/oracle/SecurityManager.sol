@@ -520,7 +520,10 @@ contract SecurityManager is
         // Reset all node profiles
         // Note: This is a simplified reset - in production you might want more granular control
 
-        _unpause();
+        // Only unpause if currently paused
+        if (paused()) {
+            _unpause();
+        }
         emit SecurityLevelChanged(5, 0, block.timestamp);
     }
 

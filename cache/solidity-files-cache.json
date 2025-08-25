@@ -80,8 +80,8 @@
       ]
     },
     "/Users/baturalpguvenc/Documents/GitHub/QLK-Oracle-Contracts/contracts/oracle/QuantlinkOracle.sol": {
-      "lastModificationDate": 1756142525882,
-      "contentHash": "05e629fc4b8bd23b3b59a7b3f2ddb70c",
+      "lastModificationDate": 1756143369456,
+      "contentHash": "798076598024a938fe22f427002dd513",
       "sourceName": "contracts/oracle/QuantlinkOracle.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -205,8 +205,8 @@
       ]
     },
     "/Users/baturalpguvenc/Documents/GitHub/QLK-Oracle-Contracts/contracts/libraries/CryptoUtils.sol": {
-      "lastModificationDate": 1756142570230,
-      "contentHash": "8e8218a867598bba7ed796cf0e212bf0",
+      "lastModificationDate": 1756143318198,
+      "contentHash": "208478527068e07ef59265b8d5d62238",
       "sourceName": "contracts/libraries/CryptoUtils.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -878,8 +878,8 @@
       ]
     },
     "/Users/baturalpguvenc/Documents/GitHub/QLK-Oracle-Contracts/contracts/oracle/NodeManager.sol": {
-      "lastModificationDate": 1756142505723,
-      "contentHash": "3dff220592f7764858efa33e5dd5895f",
+      "lastModificationDate": 1756143329394,
+      "contentHash": "f5bcea9dbe6d58cb86f7b672a17c8a64",
       "sourceName": "contracts/oracle/NodeManager.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -973,8 +973,8 @@
       ]
     },
     "/Users/baturalpguvenc/Documents/GitHub/QLK-Oracle-Contracts/contracts/oracle/SecurityManager.sol": {
-      "lastModificationDate": 1756142738567,
-      "contentHash": "2fbffec27dc233dce78e6e94c0dbfda5",
+      "lastModificationDate": 1756143355793,
+      "contentHash": "3cd196ac26dc70c4128174b0c806de07",
       "sourceName": "contracts/oracle/SecurityManager.sol",
       "solcConfig": {
         "version": "0.8.28",
