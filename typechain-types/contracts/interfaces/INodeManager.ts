@@ -34,6 +34,13 @@ export declare namespace INodeManager {
     consensusParticipation: BigNumberish;
     reputation: BigNumberish;
     isBackup: boolean;
+    successfulSubmissions: BigNumberish;
+    failedSubmissions: BigNumberish;
+    averageResponseTime: BigNumberish;
+    uptime: BigNumberish;
+    lastDowntime: BigNumberish;
+    totalEarnings: BigNumberish;
+    performanceScore: BigNumberish;
   };
 
   export type OracleNodeStructOutput = [
@@ -45,7 +52,14 @@ export declare namespace INodeManager {
     submissionCount: bigint,
     consensusParticipation: bigint,
     reputation: bigint,
-    isBackup: boolean
+    isBackup: boolean,
+    successfulSubmissions: bigint,
+    failedSubmissions: bigint,
+    averageResponseTime: bigint,
+    uptime: bigint,
+    lastDowntime: bigint,
+    totalEarnings: bigint,
+    performanceScore: bigint
   ] & {
     nodeAddress: string;
     publicKey: string;
@@ -56,6 +70,13 @@ export declare namespace INodeManager {
     consensusParticipation: bigint;
     reputation: bigint;
     isBackup: boolean;
+    successfulSubmissions: bigint;
+    failedSubmissions: bigint;
+    averageResponseTime: bigint;
+    uptime: bigint;
+    lastDowntime: bigint;
+    totalEarnings: bigint;
+    performanceScore: bigint;
   };
 
   export type RotationScheduleStruct = {

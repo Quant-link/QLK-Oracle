@@ -11,6 +11,22 @@ import {
   ProtocolIntegration,
 } from "../../typechain-types";
 
+// Helper function to create valid signatures
+async function createDataSignature(
+  signer: SignerWithAddress,
+  cexFees: number[],
+  dexFees: number[],
+  timestamp: number,
+  nonce: number
+): Promise<string> {
+  const messageHash = ethers.solidityPackedKeccak256(
+    ["uint256[]", "uint256[]", "uint256", "uint256", "address"],
+    [cexFees, dexFees, timestamp, nonce, signer.address]
+  );
+
+  return await signer.signMessage(ethers.getBytes(messageHash));
+}
+
 describe("Oracle System Integration", function () {
   let oracle: QuantlinkOracle;
   let nodeManager: NodeManager;
@@ -117,12 +133,14 @@ describe("Oracle System Integration", function () {
 
   describe("End-to-End Oracle Operation", function () {
     it("Should complete full consensus cycle", async function () {
-      const signature = "0x" + "00".repeat(65);
-
-      // Submit data from 6 nodes
+      // Submit data from 6 nodes with valid signatures
       for (let i = 0; i < 6; i++) {
         const cexFees = [100 + i * 5, 150 + i * 3, 120 + i * 4];
         const dexFees = [200 + i * 8, 250 + i * 6, 220 + i * 7];
+
+        const currentTime = await ethers.provider.getBlock("latest").then(b => b!.timestamp);
+        const nonce = await oracle.getNodeNonce(nodes[i].address);
+        const signature = await createDataSignature(nodes[i], cexFees, dexFees, currentTime, Number(nonce));
 
         await oracle.connect(nodes[i]).submitData(cexFees, dexFees, signature);
       }

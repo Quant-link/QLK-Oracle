@@ -23,6 +23,30 @@ import type {
   TypedContractMethod,
 } from "../../common";
 
+export declare namespace AccessControlManager {
+  export type DelegatedPermissionStruct = {
+    delegator: AddressLike;
+    delegatee: AddressLike;
+    permission: BytesLike;
+    expiryTime: BigNumberish;
+    isActive: boolean;
+  };
+
+  export type DelegatedPermissionStructOutput = [
+    delegator: string,
+    delegatee: string,
+    permission: string,
+    expiryTime: bigint,
+    isActive: boolean
+  ] & {
+    delegator: string;
+    delegatee: string;
+    permission: string;
+    expiryTime: bigint;
+    isActive: boolean;
+  };
+}
+
 export interface AccessControlManagerInterface extends Interface {
   getFunction(
     nameOrSignature:
@@ -48,6 +72,8 @@ export interface AccessControlManagerInterface extends Interface {
       | "activateEmergencyOverride"
       | "deactivateEmergencyOverride"
       | "delegatePermission"
+      | "getActiveDelegations"
+      | "getDelegationDetails"
       | "getRoleAdmin"
       | "grantRole"
       | "grantRoleWithExpiry"
@@ -58,6 +84,7 @@ export interface AccessControlManagerInterface extends Interface {
       | "paused"
       | "proxiableUUID"
       | "renounceRole"
+      | "revokeDelegation"
       | "revokeExpiredRoles"
       | "revokeRole"
       | "setTimeBasedAccess"
@@ -69,6 +96,7 @@ export interface AccessControlManagerInterface extends Interface {
   getEvent(
     nameOrSignatureOrTopic:
       | "ActivityRecorded"
+      | "DelegationRevoked"
       | "EmergencyOverrideActivated"
       | "EmergencyOverrideDeactivated"
       | "InactiveRoleRevoked"
@@ -172,6 +200,14 @@ export interface AccessControlManagerInterface extends Interface {
     values: [AddressLike, BytesLike, BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "getActiveDelegations",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getDelegationDetails",
+    values: [BytesLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "getRoleAdmin",
     values: [BytesLike]
   ): string;
@@ -207,6 +243,10 @@ export interface AccessControlManagerInterface extends Interface {
   encodeFunctionData(
     functionFragment: "renounceRole",
     values: [BytesLike, AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "revokeDelegation",
+    values: [BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "revokeExpiredRoles",
@@ -316,6 +356,14 @@ export interface AccessControlManagerInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "getActiveDelegations",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getDelegationDetails",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "getRoleAdmin",
     data: BytesLike
   ): Result;
@@ -344,6 +392,10 @@ export interface AccessControlManagerInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "revokeDelegation",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "revokeExpiredRoles",
     data: BytesLike
   ): Result;
@@ -368,6 +420,28 @@ export namespace ActivityRecordedEvent {
   export type OutputTuple = [account: string, timestamp: bigint];
   export interface OutputObject {
     account: string;
+    timestamp: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace DelegationRevokedEvent {
+  export type InputTuple = [
+    delegationId: BytesLike,
+    delegator: AddressLike,
+    timestamp: BigNumberish
+  ];
+  export type OutputTuple = [
+    delegationId: string,
+    delegator: string,
+    timestamp: bigint
+  ];
+  export interface OutputObject {
+    delegationId: string;
+    delegator: string;
     timestamp: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
@@ -670,6 +744,18 @@ export interface AccessControlManager extends BaseContract {
     "nonpayable"
   >;
 
+  getActiveDelegations: TypedContractMethod<
+    [account: AddressLike],
+    [string[]],
+    "view"
+  >;
+
+  getDelegationDetails: TypedContractMethod<
+    [delegationId: BytesLike],
+    [AccessControlManager.DelegatedPermissionStructOutput],
+    "view"
+  >;
+
   getRoleAdmin: TypedContractMethod<[role: BytesLike], [string], "view">;
 
   grantRole: TypedContractMethod<
@@ -714,6 +800,12 @@ export interface AccessControlManager extends BaseContract {
 
   renounceRole: TypedContractMethod<
     [role: BytesLike, callerConfirmation: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
+  revokeDelegation: TypedContractMethod<
+    [delegationId: BytesLike],
     [void],
     "nonpayable"
   >;
@@ -830,6 +922,16 @@ export interface AccessControlManager extends BaseContract {
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "getActiveDelegations"
+  ): TypedContractMethod<[account: AddressLike], [string[]], "view">;
+  getFunction(
+    nameOrSignature: "getDelegationDetails"
+  ): TypedContractMethod<
+    [delegationId: BytesLike],
+    [AccessControlManager.DelegatedPermissionStructOutput],
+    "view"
+  >;
+  getFunction(
     nameOrSignature: "getRoleAdmin"
   ): TypedContractMethod<[role: BytesLike], [string], "view">;
   getFunction(
@@ -884,6 +986,9 @@ export interface AccessControlManager extends BaseContract {
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "revokeDelegation"
+  ): TypedContractMethod<[delegationId: BytesLike], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "revokeExpiredRoles"
   ): TypedContractMethod<[account: AddressLike], [void], "nonpayable">;
   getFunction(
@@ -925,6 +1030,13 @@ export interface AccessControlManager extends BaseContract {
     ActivityRecordedEvent.InputTuple,
     ActivityRecordedEvent.OutputTuple,
     ActivityRecordedEvent.OutputObject
+  >;
+  getEvent(
+    key: "DelegationRevoked"
+  ): TypedContractEvent<
+    DelegationRevokedEvent.InputTuple,
+    DelegationRevokedEvent.OutputTuple,
+    DelegationRevokedEvent.OutputObject
   >;
   getEvent(
     key: "EmergencyOverrideActivated"
@@ -1021,6 +1133,17 @@ export interface AccessControlManager extends BaseContract {
       ActivityRecordedEvent.InputTuple,
       ActivityRecordedEvent.OutputTuple,
       ActivityRecordedEvent.OutputObject
+    >;
+
+    "DelegationRevoked(bytes32,address,uint256)": TypedContractEvent<
+      DelegationRevokedEvent.InputTuple,
+      DelegationRevokedEvent.OutputTuple,
+      DelegationRevokedEvent.OutputObject
+    >;
+    DelegationRevoked: TypedContractEvent<
+      DelegationRevokedEvent.InputTuple,
+      DelegationRevokedEvent.OutputTuple,
+      DelegationRevokedEvent.OutputObject
     >;
 
     "EmergencyOverrideActivated(address,address)": TypedContractEvent<

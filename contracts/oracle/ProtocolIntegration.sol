@@ -203,13 +203,19 @@ contract ProtocolIntegration is
         oracleFee = averageFee;
 
         if (params.useOracleFees) {
-            // Use Oracle fees directly with bounds checking
-            calculatedFee = _applyFeeBounds(amount, averageFee, params);
+            // Use Oracle fees directly with advanced bounds checking
+            calculatedFee = _applyAdvancedFeeBounds(amount, averageFee, params, config);
         } else {
-            // Use base fee with Oracle data as adjustment
-            uint256 adjustedFee = _calculateAdjustedFee(params.baseFeeBps, averageFee, params);
+            // Use base fee with Oracle data as dynamic adjustment
+            uint256 adjustedFee = _calculateDynamicAdjustedFee(params.baseFeeBps, averageFee, params, config);
             calculatedFee = (amount * adjustedFee) / 10000; // Convert from basis points
         }
+
+        // Apply volume-based discounts
+        calculatedFee = _applyVolumeDiscounts(protocol, amount, calculatedFee);
+
+        // Apply time-based adjustments
+        calculatedFee = _applyTimeBasedAdjustments(calculatedFee, config);
 
         return (calculatedFee, oracleFee);
     }
@@ -401,6 +407,106 @@ contract ProtocolIntegration is
         }
         
         return adjustedFee;
+    }
+
+    /**
+     * @dev Advanced fee bounds checking with dynamic adjustments
+     */
+    function _applyAdvancedFeeBounds(
+        uint256 amount,
+        uint256 feeBps,
+        FeeCalculationParams memory params,
+        IntegrationConfig memory config
+    ) internal view returns (uint256) {
+        // Apply volatility adjustments
+        uint256 adjustedFeeBps = feeBps;
+
+        // Time-based volatility adjustment
+        uint256 timeSinceUpdate = block.timestamp - config.lastUpdate;
+        if (timeSinceUpdate > config.updateFrequency * 2) {
+            // Increase fee for stale data
+            adjustedFeeBps = (adjustedFeeBps * 110) / 100; // 10% increase
+        }
+
+        // Apply bounds
+        if (adjustedFeeBps < params.minFeeBps) {
+            adjustedFeeBps = params.minFeeBps;
+        } else if (adjustedFeeBps > params.maxFeeBps) {
+            adjustedFeeBps = params.maxFeeBps;
+        }
+
+        return (amount * adjustedFeeBps) / 10000;
+    }
+
+    /**
+     * @dev Dynamic fee adjustment based on Oracle data and market conditions
+     */
+    function _calculateDynamicAdjustedFee(
+        uint256 baseFee,
+        uint256 oracleFee,
+        FeeCalculationParams memory params,
+        IntegrationConfig memory config
+    ) internal view returns (uint256) {
+        // Weighted average based on data freshness
+        uint256 timeSinceUpdate = block.timestamp - config.lastUpdate;
+        uint256 oracleWeight = timeSinceUpdate < config.updateFrequency ? 70 : 30; // Fresh data gets higher weight
+
+        uint256 adjustedFee = (baseFee * (100 - oracleWeight) + oracleFee * oracleWeight) / 100;
+
+        // Apply volatility multiplier
+        adjustedFee = (adjustedFee * params.volatilityMultiplier) / 100;
+
+        // Apply bounds
+        if (adjustedFee < params.minFeeBps) {
+            adjustedFee = params.minFeeBps;
+        } else if (adjustedFee > params.maxFeeBps) {
+            adjustedFee = params.maxFeeBps;
+        }
+
+        return adjustedFee;
+    }
+
+    /**
+     * @dev Apply volume-based discounts
+     */
+    function _applyVolumeDiscounts(
+        address /* protocol */,
+        uint256 amount,
+        uint256 calculatedFee
+    ) internal pure returns (uint256) {
+        // Volume tiers for discounts
+        if (amount >= 1000000 ether) { // > 1M
+            return (calculatedFee * 80) / 100; // 20% discount
+        } else if (amount >= 100000 ether) { // > 100K
+            return (calculatedFee * 90) / 100; // 10% discount
+        } else if (amount >= 10000 ether) { // > 10K
+            return (calculatedFee * 95) / 100; // 5% discount
+        }
+
+        return calculatedFee; // No discount
+    }
+
+    /**
+     * @dev Apply time-based adjustments (peak hours, etc.)
+     */
+    function _applyTimeBasedAdjustments(
+        uint256 calculatedFee,
+        IntegrationConfig memory /* config */
+    ) internal view returns (uint256) {
+        // Get current hour (0-23)
+        uint256 currentHour = (block.timestamp / 3600) % 24;
+
+        // Peak hours (9 AM - 5 PM UTC) get slight increase
+        if (currentHour >= 9 && currentHour <= 17) {
+            return (calculatedFee * 105) / 100; // 5% increase during peak hours
+        }
+
+        // Off-peak hours get slight discount
+        if (currentHour >= 22 || currentHour <= 6) {
+            return (calculatedFee * 95) / 100; // 5% discount during off-peak
+        }
+
+        return calculatedFee; // Normal hours
     }
 
     /**

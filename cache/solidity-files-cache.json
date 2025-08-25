@@ -80,8 +80,8 @@
       ]
     },
     "/Users/baturalpguvenc/Documents/GitHub/QLK-Oracle-Contracts/contracts/oracle/QuantlinkOracle.sol": {
-      "lastModificationDate": 1756143369456,
-      "contentHash": "798076598024a938fe22f427002dd513",
+      "lastModificationDate": 1756165957791,
+      "contentHash": "3c1775ddff2507a835ef903b12b039a1",
       "sourceName": "contracts/oracle/QuantlinkOracle.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -129,8 +129,8 @@
       ]
     },
     "/Users/baturalpguvenc/Documents/GitHub/QLK-Oracle-Contracts/contracts/interfaces/INodeManager.sol": {
-      "lastModificationDate": 1756142036456,
-      "contentHash": "37cce08beacd8ffb87e8bb411f958003",
+      "lastModificationDate": 1756165677273,
+      "contentHash": "05ec721a961c2de3f0baaca9cac6fe8b",
       "sourceName": "contracts/interfaces/INodeManager.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -878,8 +878,8 @@
       ]
     },
     "/Users/baturalpguvenc/Documents/GitHub/QLK-Oracle-Contracts/contracts/oracle/NodeManager.sol": {
-      "lastModificationDate": 1756143329394,
-      "contentHash": "f5bcea9dbe6d58cb86f7b672a17c8a64",
+      "lastModificationDate": 1756166040811,
+      "contentHash": "57cfdc0a4a733eb32cd78b57fbb824f7",
       "sourceName": "contracts/oracle/NodeManager.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -924,8 +924,8 @@
       ]
     },
     "/Users/baturalpguvenc/Documents/GitHub/QLK-Oracle-Contracts/contracts/oracle/ConsensusEngine.sol": {
-      "lastModificationDate": 1756142489054,
-      "contentHash": "e5ee3b828e931775953d842b72c72f4c",
+      "lastModificationDate": 1756165948117,
+      "contentHash": "0f40827e2cb67852f39b6e908d6c5a5f",
       "sourceName": "contracts/oracle/ConsensusEngine.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -1018,8 +1018,8 @@
       ]
     },
     "/Users/baturalpguvenc/Documents/GitHub/QLK-Oracle-Contracts/contracts/oracle/AccessControlManager.sol": {
-      "lastModificationDate": 1756142792645,
-      "contentHash": "c851ddc3e5f12158a42754c07f4a07f9",
+      "lastModificationDate": 1756165385626,
+      "contentHash": "b3e8f7212cc2499bdeefc9c3506ba21e",
       "sourceName": "contracts/oracle/AccessControlManager.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -1061,8 +1061,8 @@
       ]
     },
     "/Users/baturalpguvenc/Documents/GitHub/QLK-Oracle-Contracts/contracts/oracle/PriceFeedAdapter.sol": {
-      "lastModificationDate": 1756142966101,
-      "contentHash": "97902918a6a5c3940ab31456d1a079b6",
+      "lastModificationDate": 1756165638949,
+      "contentHash": "86af66ac78286cc3e6107615e8329b1e",
       "sourceName": "contracts/oracle/PriceFeedAdapter.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -1145,8 +1145,8 @@
       ]
     },
     "/Users/baturalpguvenc/Documents/GitHub/QLK-Oracle-Contracts/contracts/oracle/ProtocolIntegration.sol": {
-      "lastModificationDate": 1756143019001,
-      "contentHash": "e203fcd571f5df25ae0568e5c6e844ba",
+      "lastModificationDate": 1756165863397,
+      "contentHash": "2ca7de7c2677d19b4058e79ecb4df3a5",
       "sourceName": "contracts/oracle/ProtocolIntegration.sol",
       "solcConfig": {
         "version": "0.8.28",

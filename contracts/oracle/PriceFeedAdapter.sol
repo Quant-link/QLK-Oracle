@@ -43,9 +43,14 @@ contract PriceFeedAdapter is
     mapping(uint80 => FeeData) private _feeHistory;
     mapping(address => SubscriptionConfig) private _priceSubscriptions;
     mapping(address => SubscriptionConfig) private _feeSubscriptions;
-    
+
     uint80 private _currentRoundId;
     string[] private _supportedSources;
+
+    // Historical data tracking
+    uint80[] private _historicalRounds;
+    mapping(uint256 => uint80[]) private _roundsByTimestamp; // timestamp => round IDs
+    uint256 private _oldestDataTimestamp;
     
     // Emergency state
     bool private _isEmergency;
@@ -250,14 +255,16 @@ contract PriceFeedAdapter is
      */
     function getLatestFeeData() external view override oracleSet returns (FeeData memory feeData) {
         IQuantlinkOracle.FeeData memory oracleData = oracle.getLatestFeeData();
-        
-        return FeeData({
+
+        feeData = FeeData({
             cexFees: oracleData.cexFees,
             dexFees: oracleData.dexFees,
             timestamp: oracleData.timestamp,
             roundId: uint80(oracleData.blockNumber),
             exchangeCount: uint8(oracleData.cexFees.length + oracleData.dexFees.length)
         });
+
+        return feeData;
     }
 
     /**
@@ -328,13 +335,143 @@ contract PriceFeedAdapter is
         override
         returns (PriceData[] memory priceHistory)
     {
-        // This is a simplified implementation
-        // In production, you'd want to implement efficient historical data retrieval
+        // Validate query parameters
         require(query.startTime < query.endTime, "Invalid time range");
         require(query.maxResults > 0 && query.maxResults <= 1000, "Invalid max results");
-        
-        // For now, return empty array as historical data requires more complex indexing
-        return new PriceData[](0);
+
+        // Get rounds within time range
+        uint80[] memory relevantRounds = _getRoundsInTimeRange(query.startTime, query.endTime);
+
+        // Limit results
+        uint256 resultCount = relevantRounds.length > query.maxResults ? query.maxResults : relevantRounds.length;
+        priceHistory = new PriceData[](resultCount);
+
+        // Populate historical data
+        for (uint256 i = 0; i < resultCount; i++) {
+            uint80 roundId = relevantRounds[i];
+            if (_priceHistory[roundId].timestamp != 0) {
+                priceHistory[i] = _priceHistory[roundId];
+            } else {
+                // Generate price data from Oracle if not cached
+                try oracle.getFeeDataAtRound(roundId) returns (IQuantlinkOracle.FeeData memory oracleData) {
+                    priceHistory[i] = PriceData({
+                        price: _calculateAverageFee(oracleData.cexFees, oracleData.dexFees),
+                        timestamp: oracleData.timestamp,
+                        roundId: roundId,
+                        confidence: _calculateConfidence(oracleData),
+                        source: "Quantlink Oracle"
+                    });
+                } catch {
+                    // Skip invalid rounds
+                    continue;
+                }
+            }
+        }
+
+        return priceHistory;
+    }
+
+    /**
+     * @dev Gets rounds within a time range
+     * @param startTime Start timestamp
+     * @param endTime End timestamp
+     * @return rounds Array of round IDs in the time range
+     */
+    function _getRoundsInTimeRange(uint256 startTime, uint256 endTime) internal view returns (uint80[] memory rounds) {
+        uint256 resultCount = 0;
+
+        // Count rounds in range
+        for (uint256 i = 0; i < _historicalRounds.length; i++) {
+            uint80 roundId = _historicalRounds[i];
+            uint256 roundTimestamp = _getRoundTimestamp(roundId);
+
+            if (roundTimestamp >= startTime && roundTimestamp <= endTime) {
+                resultCount++;
+            }
+        }
+
+        // Create result array
+        rounds = new uint80[](resultCount);
+        uint256 index = 0;
+
+        for (uint256 i = 0; i < _historicalRounds.length; i++) {
+            uint80 roundId = _historicalRounds[i];
+            uint256 roundTimestamp = _getRoundTimestamp(roundId);
+
+            if (roundTimestamp >= startTime && roundTimestamp <= endTime) {
+                rounds[index++] = roundId;
+            }
+        }
+
+        return rounds;
+    }
+
+    /**
+     * @dev Gets timestamp for a round
+     * @param roundId Round ID
+     * @return timestamp Round timestamp
+     */
+    function _getRoundTimestamp(uint80 roundId) internal view returns (uint256 timestamp) {
+        if (_priceHistory[roundId].timestamp != 0) {
+            return _priceHistory[roundId].timestamp;
+        }
+
+        if (_feeHistory[roundId].timestamp != 0) {
+            return _feeHistory[roundId].timestamp;
+        }
+
+        // Try to get from Oracle
+        try oracle.getFeeDataAtRound(roundId) returns (IQuantlinkOracle.FeeData memory data) {
+            return data.timestamp;
+        } catch {
+            return 0;
+        }
+    }
+
+    /**
+     * @dev Caches round data for historical queries
+     * @param roundId Round ID
+     * @param feeData Fee data to cache
+     * @param oracleData Original oracle data
+     */
+    function _cacheRoundData(
+        uint80 roundId,
+        FeeData memory feeData,
+        IQuantlinkOracle.FeeData memory oracleData
+    ) internal {
+        // Cache fee data if not already cached
+        if (_feeHistory[roundId].timestamp == 0) {
+            _feeHistory[roundId] = feeData;
+        }
+
+        // Cache price data if not already cached
+        if (_priceHistory[roundId].timestamp == 0) {
+            _priceHistory[roundId] = PriceData({
+                price: _calculateAverageFee(oracleData.cexFees, oracleData.dexFees),
+                timestamp: oracleData.timestamp,
+                roundId: roundId,
+                confidence: _calculateConfidence(oracleData),
+                source: "Quantlink Oracle"
+            });
+        }
+
+        // Add to historical rounds if not already present
+        bool roundExists = false;
+        for (uint256 i = 0; i < _historicalRounds.length; i++) {
+            if (_historicalRounds[i] == roundId) {
+                roundExists = true;
+                break;
+            }
+        }
+
+        if (!roundExists) {
+            _historicalRounds.push(roundId);
+
+            // Update oldest data timestamp
+            if (_oldestDataTimestamp == 0 || oracleData.timestamp < _oldestDataTimestamp) {
+                _oldestDataTimestamp = oracleData.timestamp;
+            }
+        }
     }
 
     /**
@@ -346,12 +483,40 @@ contract PriceFeedAdapter is
         override
         returns (FeeData[] memory feeHistory)
     {
-        // This is a simplified implementation
+        // Validate query parameters
         require(query.startTime < query.endTime, "Invalid time range");
         require(query.maxResults > 0 && query.maxResults <= 1000, "Invalid max results");
-        
-        // For now, return empty array as historical data requires more complex indexing
-        return new FeeData[](0);
+
+        // Get rounds within time range
+        uint80[] memory relevantRounds = _getRoundsInTimeRange(query.startTime, query.endTime);
+
+        // Limit results
+        uint256 resultCount = relevantRounds.length > query.maxResults ? query.maxResults : relevantRounds.length;
+        feeHistory = new FeeData[](resultCount);
+
+        // Populate historical data
+        for (uint256 i = 0; i < resultCount; i++) {
+            uint80 roundId = relevantRounds[i];
+            if (_feeHistory[roundId].timestamp != 0) {
+                feeHistory[i] = _feeHistory[roundId];
+            } else {
+                // Generate fee data from Oracle if not cached
+                try oracle.getFeeDataAtRound(roundId) returns (IQuantlinkOracle.FeeData memory oracleData) {
+                    feeHistory[i] = FeeData({
+                        cexFees: oracleData.cexFees,
+                        dexFees: oracleData.dexFees,
+                        timestamp: oracleData.timestamp,
+                        roundId: roundId,
+                        exchangeCount: uint8(oracleData.cexFees.length + oracleData.dexFees.length)
+                    });
+                } catch {
+                    // Skip invalid rounds
+                    continue;
+                }
+            }
+        }
+
+        return feeHistory;
     }
 
     /**
@@ -681,6 +846,24 @@ contract PriceFeedAdapter is
                 break;
             }
         }
+    }
+
+    /**
+     * @dev Updates cache with latest Oracle data (admin only)
+     */
+    function updateCache() external onlyRole(ADMIN_ROLE) {
+        IQuantlinkOracle.FeeData memory oracleData = oracle.getLatestFeeData();
+        uint80 roundId = uint80(oracleData.blockNumber);
+
+        FeeData memory feeData = FeeData({
+            cexFees: oracleData.cexFees,
+            dexFees: oracleData.dexFees,
+            timestamp: oracleData.timestamp,
+            roundId: roundId,
+            exchangeCount: uint8(oracleData.cexFees.length + oracleData.dexFees.length)
+        });
+
+        _cacheRoundData(roundId, feeData, oracleData);
     }
 
     // ============ INTERNAL HELPER FUNCTIONS ============

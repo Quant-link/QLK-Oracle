@@ -59,6 +59,11 @@ contract AccessControlManager is
     mapping(bytes32 => uint256) private _roleExpiryTimes;
     mapping(address => bool) private _emergencyOverride;
 
+    // Enhanced delegation tracking
+    mapping(address => bytes32[]) private _userDelegations; // delegatee -> delegation IDs
+    mapping(address => bytes32[]) private _userGrantedDelegations; // delegator -> delegation IDs
+    bytes32[] private _allDelegations;
+
     uint256 public constant MAX_ROLE_DURATION = 365 days;
     uint256 public constant ACTIVITY_TIMEOUT = 30 days;
 
@@ -75,6 +80,12 @@ contract AccessControlManager is
         address indexed delegatee,
         bytes32 indexed permission,
         uint256 expiryTime
+    );
+
+    event DelegationRevoked(
+        bytes32 indexed delegationId,
+        address indexed delegator,
+        uint256 timestamp
     );
 
     event EmergencyOverrideActivated(address indexed account, address indexed activator);
@@ -192,8 +203,67 @@ contract AccessControlManager is
             isActive: true
         });
 
+        // Track delegations for efficient lookup
+        _userDelegations[delegatee].push(delegationId);
+        _userGrantedDelegations[msg.sender].push(delegationId);
+        _allDelegations.push(delegationId);
+
         emit PermissionDelegated(msg.sender, delegatee, permission, expiryTime);
         return delegationId;
+    }
+
+    /**
+     * @dev Revokes a delegation
+     * @param delegationId ID of the delegation to revoke
+     */
+    function revokeDelegation(bytes32 delegationId) external recordActivity {
+        DelegatedPermission storage delegation = _delegatedPermissions[delegationId];
+        require(delegation.delegator == msg.sender, "Not delegator");
+        require(delegation.isActive, "Delegation not active");
+
+        delegation.isActive = false;
+
+        emit DelegationRevoked(delegationId, msg.sender, block.timestamp);
+    }
+
+    /**
+     * @dev Returns all active delegations for an account
+     * @param account Account to check
+     * @return delegations Array of active delegation IDs
+     */
+    function getActiveDelegations(address account) external view returns (bytes32[] memory delegations) {
+        bytes32[] memory userDelegations = _userDelegations[account];
+        uint256 activeCount = 0;
+
+        // Count active delegations
+        for (uint256 i = 0; i < userDelegations.length; i++) {
+            DelegatedPermission memory delegation = _delegatedPermissions[userDelegations[i]];
+            if (delegation.isActive && block.timestamp <= delegation.expiryTime) {
+                activeCount++;
+            }
+        }
+
+        // Create array of active delegations
+        delegations = new bytes32[](activeCount);
+        uint256 index = 0;
+
+        for (uint256 i = 0; i < userDelegations.length; i++) {
+            DelegatedPermission memory delegation = _delegatedPermissions[userDelegations[i]];
+            if (delegation.isActive && block.timestamp <= delegation.expiryTime) {
+                delegations[index++] = userDelegations[i];
+            }
+        }
+
+        return delegations;
+    }
+
+    /**
+     * @dev Returns delegation details
+     * @param delegationId Delegation ID
+     * @return delegation Delegation details
+     */
+    function getDelegationDetails(bytes32 delegationId) external view returns (DelegatedPermission memory delegation) {
+        return _delegatedPermissions[delegationId];
     }
 
     /**
@@ -357,8 +427,18 @@ contract AccessControlManager is
      * @dev Checks if account has delegated permission
      */
     function _hasDelegatedPermission(address account, bytes32 permission) internal view returns (bool) {
-        // This is a simplified check - in production you'd iterate through delegations
-        // For now, we'll return false as delegation lookup requires more complex indexing
+        bytes32[] memory userDelegations = _userDelegations[account];
+
+        for (uint256 i = 0; i < userDelegations.length; i++) {
+            DelegatedPermission memory delegation = _delegatedPermissions[userDelegations[i]];
+
+            if (delegation.isActive &&
+                delegation.permission == permission &&
+                block.timestamp <= delegation.expiryTime) {
+                return true;
+            }
+        }
+
         return false;
     }
 
