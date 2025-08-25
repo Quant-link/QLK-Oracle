@@ -53,6 +53,8 @@ contract NodeManager is
     event RotationIntervalUpdated(uint256 oldInterval, uint256 newInterval, address indexed updatedBy);
     event NodeReputationDecayed(address indexed node, uint8 oldReputation, uint8 newReputation);
     event EmergencyNodeActivation(address indexed node, string reason, uint256 timestamp);
+    event NodePerformanceUpdated(address indexed node, uint8 performanceScore, string reason);
+    event NodeDowntimeRecorded(address indexed node, uint256 downtimeStart, uint256 downtimeEnd);
 
     /**
      * @dev Custom errors
@@ -145,7 +147,15 @@ contract NodeManager is
             submissionCount: 0,
             consensusParticipation: 0,
             reputation: 75, // Start with medium reputation
-            isBackup: false
+            isBackup: false,
+            // Initialize advanced metrics
+            successfulSubmissions: 0,
+            failedSubmissions: 0,
+            averageResponseTime: 0,
+            uptime: 0,
+            lastDowntime: 0,
+            totalEarnings: 0,
+            performanceScore: 75
         });
 
         _totalRegisteredNodes++;
@@ -395,11 +405,114 @@ contract NodeManager is
     ) external override onlyRole(ORACLE_ROLE) nodeExists(nodeAddress) {
         OracleNode storage node = _nodes[nodeAddress];
         node.consensusParticipation++;
+        node.successfulSubmissions++;
 
         // Increase reputation for consensus participation
         if (node.reputation < MAX_REPUTATION) {
             node.reputation = node.reputation + 2 > MAX_REPUTATION ? MAX_REPUTATION : node.reputation + 2;
         }
+
+        // Update performance score
+        _updatePerformanceScore(nodeAddress);
+    }
+
+    /**
+     * @dev Records failed submission for a node
+     */
+    function recordFailedSubmission(address nodeAddress, string calldata reason) external onlyRole(ORACLE_ROLE) nodeExists(nodeAddress) {
+        OracleNode storage node = _nodes[nodeAddress];
+        node.failedSubmissions++;
+
+        // Decrease reputation for failed submission
+        if (node.reputation > 0) {
+            node.reputation = node.reputation > 5 ? node.reputation - 5 : 0;
+        }
+
+        // Update performance score
+        _updatePerformanceScore(nodeAddress);
+
+        emit NodePerformanceUpdated(nodeAddress, node.performanceScore, reason);
+    }
+
+    /**
+     * @dev Records node response time
+     */
+    function recordResponseTime(address nodeAddress, uint256 responseTime) external onlyRole(ORACLE_ROLE) nodeExists(nodeAddress) {
+        OracleNode storage node = _nodes[nodeAddress];
+
+        // Calculate rolling average response time
+        if (node.averageResponseTime == 0) {
+            node.averageResponseTime = responseTime;
+        } else {
+            // Weighted average: 80% old, 20% new
+            node.averageResponseTime = (node.averageResponseTime * 80 + responseTime * 20) / 100;
+        }
+
+        // Update performance score based on response time
+        _updatePerformanceScore(nodeAddress);
+    }
+
+    /**
+     * @dev Records node downtime
+     */
+    function recordDowntime(address nodeAddress, uint256 downtimeStart, uint256 downtimeEnd) external onlyRole(ORACLE_ROLE) nodeExists(nodeAddress) {
+        OracleNode storage node = _nodes[nodeAddress];
+
+        node.lastDowntime = downtimeEnd - downtimeStart;
+
+        // Update uptime calculation
+        uint256 totalTime = block.timestamp - node.registrationTime;
+        if (totalTime > 0) {
+            uint256 totalDowntime = node.lastDowntime;
+            node.uptime = ((totalTime - totalDowntime) * 100) / totalTime;
+        }
+
+        // Update performance score
+        _updatePerformanceScore(nodeAddress);
+
+        emit NodeDowntimeRecorded(nodeAddress, downtimeStart, downtimeEnd);
+    }
+
+    /**
+     * @dev Updates performance score based on various metrics
+     */
+    function _updatePerformanceScore(address nodeAddress) internal {
+        OracleNode storage node = _nodes[nodeAddress];
+
+        uint256 totalSubmissions = node.successfulSubmissions + node.failedSubmissions;
+        uint8 newScore = 0;
+
+        if (totalSubmissions > 0) {
+            // Success rate (40% weight) - safe calculation
+            uint256 successRate = (node.successfulSubmissions * 100) / totalSubmissions;
+            uint256 successScore = (successRate * 40) / 100;
+            newScore += successScore > 255 ? 255 : uint8(successScore);
+
+            // Reputation (30% weight) - safe calculation
+            uint256 reputationScore = (uint256(node.reputation) * 30) / 100;
+            newScore += reputationScore > 255 ? 255 : uint8(reputationScore);
+
+            // Uptime (20% weight) - safe calculation
+            uint256 uptimeScore = (node.uptime * 20) / 100;
+            newScore += uptimeScore > 255 ? 255 : uint8(uptimeScore);
+
+            // Response time (10% weight) - inverse relationship
+            if (node.averageResponseTime > 0) {
+                uint256 responseScore = node.averageResponseTime < 1000 ? 100 :
+                                      node.averageResponseTime < 5000 ? 80 :
+                                      node.averageResponseTime < 10000 ? 60 : 40;
+                uint256 responseWeighted = (responseScore * 10) / 100;
+                newScore += responseWeighted > 255 ? 255 : uint8(responseWeighted);
+            } else {
+                newScore += 10; // Default if no response time data
+            }
+        } else {
+            // Default score based on reputation - safe calculation
+            uint256 defaultScore = (uint256(node.reputation) * 75) / 100;
+            newScore = defaultScore > 255 ? 255 : uint8(defaultScore);
+        }
+
+        node.performanceScore = newScore > 100 ? 100 : newScore;
     }
 
     // ============ VIEW FUNCTIONS ============

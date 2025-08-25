@@ -34,6 +34,13 @@ export declare namespace INodeManager {
     consensusParticipation: BigNumberish;
     reputation: BigNumberish;
     isBackup: boolean;
+    successfulSubmissions: BigNumberish;
+    failedSubmissions: BigNumberish;
+    averageResponseTime: BigNumberish;
+    uptime: BigNumberish;
+    lastDowntime: BigNumberish;
+    totalEarnings: BigNumberish;
+    performanceScore: BigNumberish;
   };
 
   export type OracleNodeStructOutput = [
@@ -45,7 +52,14 @@ export declare namespace INodeManager {
     submissionCount: bigint,
     consensusParticipation: bigint,
     reputation: bigint,
-    isBackup: boolean
+    isBackup: boolean,
+    successfulSubmissions: bigint,
+    failedSubmissions: bigint,
+    averageResponseTime: bigint,
+    uptime: bigint,
+    lastDowntime: bigint,
+    totalEarnings: bigint,
+    performanceScore: bigint
   ] & {
     nodeAddress: string;
     publicKey: string;
@@ -56,6 +70,13 @@ export declare namespace INodeManager {
     consensusParticipation: bigint;
     reputation: bigint;
     isBackup: boolean;
+    successfulSubmissions: bigint;
+    failedSubmissions: bigint;
+    averageResponseTime: bigint;
+    uptime: bigint;
+    lastDowntime: bigint;
+    totalEarnings: bigint;
+    performanceScore: bigint;
   };
 
   export type RotationScheduleStruct = {
@@ -117,7 +138,10 @@ export interface NodeManagerInterface extends Interface {
       | "paused"
       | "proxiableUUID"
       | "recordConsensusParticipation"
+      | "recordDowntime"
+      | "recordFailedSubmission"
       | "recordNodeActivity"
+      | "recordResponseTime"
       | "registerNode"
       | "renounceRole"
       | "revokeRole"
@@ -137,7 +161,9 @@ export interface NodeManagerInterface extends Interface {
       | "Initialized"
       | "NodeActivated"
       | "NodeDeactivated"
+      | "NodeDowntimeRecorded"
       | "NodeManagerInitialized"
+      | "NodePerformanceUpdated"
       | "NodeRegistered"
       | "NodeReputationDecayed"
       | "NodeReputationUpdated"
@@ -291,8 +317,20 @@ export interface NodeManagerInterface extends Interface {
     values: [AddressLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "recordDowntime",
+    values: [AddressLike, BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "recordFailedSubmission",
+    values: [AddressLike, string]
+  ): string;
+  encodeFunctionData(
     functionFragment: "recordNodeActivity",
     values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "recordResponseTime",
+    values: [AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "registerNode",
@@ -456,7 +494,19 @@ export interface NodeManagerInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "recordDowntime",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "recordFailedSubmission",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "recordNodeActivity",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "recordResponseTime",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -587,12 +637,56 @@ export namespace NodeDeactivatedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
+export namespace NodeDowntimeRecordedEvent {
+  export type InputTuple = [
+    node: AddressLike,
+    downtimeStart: BigNumberish,
+    downtimeEnd: BigNumberish
+  ];
+  export type OutputTuple = [
+    node: string,
+    downtimeStart: bigint,
+    downtimeEnd: bigint
+  ];
+  export interface OutputObject {
+    node: string;
+    downtimeStart: bigint;
+    downtimeEnd: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export namespace NodeManagerInitializedEvent {
   export type InputTuple = [admin: AddressLike, timestamp: BigNumberish];
   export type OutputTuple = [admin: string, timestamp: bigint];
   export interface OutputObject {
     admin: string;
     timestamp: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace NodePerformanceUpdatedEvent {
+  export type InputTuple = [
+    node: AddressLike,
+    performanceScore: BigNumberish,
+    reason: string
+  ];
+  export type OutputTuple = [
+    node: string,
+    performanceScore: bigint,
+    reason: string
+  ];
+  export interface OutputObject {
+    node: string;
+    performanceScore: bigint;
+    reason: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -977,8 +1071,30 @@ export interface NodeManager extends BaseContract {
     "nonpayable"
   >;
 
+  recordDowntime: TypedContractMethod<
+    [
+      nodeAddress: AddressLike,
+      downtimeStart: BigNumberish,
+      downtimeEnd: BigNumberish
+    ],
+    [void],
+    "nonpayable"
+  >;
+
+  recordFailedSubmission: TypedContractMethod<
+    [nodeAddress: AddressLike, reason: string],
+    [void],
+    "nonpayable"
+  >;
+
   recordNodeActivity: TypedContractMethod<
     [nodeAddress: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
+  recordResponseTime: TypedContractMethod<
+    [nodeAddress: AddressLike, responseTime: BigNumberish],
     [void],
     "nonpayable"
   >;
@@ -1172,8 +1288,33 @@ export interface NodeManager extends BaseContract {
     nameOrSignature: "recordConsensusParticipation"
   ): TypedContractMethod<[nodeAddress: AddressLike], [void], "nonpayable">;
   getFunction(
+    nameOrSignature: "recordDowntime"
+  ): TypedContractMethod<
+    [
+      nodeAddress: AddressLike,
+      downtimeStart: BigNumberish,
+      downtimeEnd: BigNumberish
+    ],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "recordFailedSubmission"
+  ): TypedContractMethod<
+    [nodeAddress: AddressLike, reason: string],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
     nameOrSignature: "recordNodeActivity"
   ): TypedContractMethod<[nodeAddress: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "recordResponseTime"
+  ): TypedContractMethod<
+    [nodeAddress: AddressLike, responseTime: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
   getFunction(
     nameOrSignature: "registerNode"
   ): TypedContractMethod<
@@ -1265,11 +1406,25 @@ export interface NodeManager extends BaseContract {
     NodeDeactivatedEvent.OutputObject
   >;
   getEvent(
+    key: "NodeDowntimeRecorded"
+  ): TypedContractEvent<
+    NodeDowntimeRecordedEvent.InputTuple,
+    NodeDowntimeRecordedEvent.OutputTuple,
+    NodeDowntimeRecordedEvent.OutputObject
+  >;
+  getEvent(
     key: "NodeManagerInitialized"
   ): TypedContractEvent<
     NodeManagerInitializedEvent.InputTuple,
     NodeManagerInitializedEvent.OutputTuple,
     NodeManagerInitializedEvent.OutputObject
+  >;
+  getEvent(
+    key: "NodePerformanceUpdated"
+  ): TypedContractEvent<
+    NodePerformanceUpdatedEvent.InputTuple,
+    NodePerformanceUpdatedEvent.OutputTuple,
+    NodePerformanceUpdatedEvent.OutputObject
   >;
   getEvent(
     key: "NodeRegistered"
@@ -1412,6 +1567,17 @@ export interface NodeManager extends BaseContract {
       NodeDeactivatedEvent.OutputObject
     >;
 
+    "NodeDowntimeRecorded(address,uint256,uint256)": TypedContractEvent<
+      NodeDowntimeRecordedEvent.InputTuple,
+      NodeDowntimeRecordedEvent.OutputTuple,
+      NodeDowntimeRecordedEvent.OutputObject
+    >;
+    NodeDowntimeRecorded: TypedContractEvent<
+      NodeDowntimeRecordedEvent.InputTuple,
+      NodeDowntimeRecordedEvent.OutputTuple,
+      NodeDowntimeRecordedEvent.OutputObject
+    >;
+
     "NodeManagerInitialized(address,uint256)": TypedContractEvent<
       NodeManagerInitializedEvent.InputTuple,
       NodeManagerInitializedEvent.OutputTuple,
@@ -1421,6 +1587,17 @@ export interface NodeManager extends BaseContract {
       NodeManagerInitializedEvent.InputTuple,
       NodeManagerInitializedEvent.OutputTuple,
       NodeManagerInitializedEvent.OutputObject
+    >;
+
+    "NodePerformanceUpdated(address,uint8,string)": TypedContractEvent<
+      NodePerformanceUpdatedEvent.InputTuple,
+      NodePerformanceUpdatedEvent.OutputTuple,
+      NodePerformanceUpdatedEvent.OutputObject
+    >;
+    NodePerformanceUpdated: TypedContractEvent<
+      NodePerformanceUpdatedEvent.InputTuple,
+      NodePerformanceUpdatedEvent.OutputTuple,
+      NodePerformanceUpdatedEvent.OutputObject
     >;
 
     "NodeRegistered(address,bytes,uint256)": TypedContractEvent<

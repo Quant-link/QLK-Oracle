@@ -41,6 +41,14 @@ interface INodeManager {
         uint256 consensusParticipation;
         uint8 reputation;
         bool isBackup;
+        // Advanced metrics
+        uint256 successfulSubmissions;
+        uint256 failedSubmissions;
+        uint256 averageResponseTime;
+        uint256 uptime;
+        uint256 lastDowntime;
+        uint256 totalEarnings;
+        uint8 performanceScore;
     }
 
     /**

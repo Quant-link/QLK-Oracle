@@ -367,21 +367,21 @@ contract QuantlinkOracle is
     /**
      * @dev Returns the consensus threshold
      */
-    function getConsensusThreshold() external view override returns (uint8) {
-        return _consensusThreshold;
+    function getConsensusThreshold() external pure override returns (uint8) {
+        return DEFAULT_CONSENSUS_THRESHOLD;
     }
 
     /**
      * @dev Returns total number of nodes
      */
-    function getTotalNodes() external view override returns (uint8) {
+    function getTotalNodes() external pure override returns (uint8) {
         return TOTAL_NODES;
     }
 
     /**
      * @dev Returns update interval in seconds
      */
-    function getUpdateInterval() external view override returns (uint256) {
+    function getUpdateInterval() external pure override returns (uint256) {
         return UPDATE_INTERVAL;
     }
 
@@ -403,7 +403,7 @@ contract QuantlinkOracle is
      * @dev Returns next rotation time
      */
     function getNextRotationTime() external view override returns (uint256) {
-        return _lastUpdateTime + UPDATE_INTERVAL;
+        return nodeManager.getRotationSchedule().rotationTime;
     }
 
     /**
@@ -513,8 +513,8 @@ contract QuantlinkOracle is
     /**
      * @dev Updates update interval (admin only)
      */
-    function updateUpdateInterval(uint256 newInterval) external override onlyRole(ADMIN_ROLE) {
-        revert InvalidConfiguration("updateInterval", newInterval);
+    function updateUpdateInterval(uint256 /* newInterval */) external view override onlyRole(ADMIN_ROLE) {
+        revert InvalidConfiguration("updateInterval", 0);
         // Update interval is constant for security - this function exists for interface compliance
     }
 

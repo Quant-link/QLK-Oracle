@@ -848,13 +848,13 @@ export interface ConsensusEngine extends BaseContract {
   detectOutliers: TypedContractMethod<
     [roundId: BigNumberish],
     [string[]],
-    "nonpayable"
+    "view"
   >;
 
   finalizeRound: TypedContractMethod<
     [roundId: BigNumberish],
     [IQuantlinkOracle.FeeDataStructOutput],
-    "nonpayable"
+    "view"
   >;
 
   getAggregationMethod: TypedContractMethod<[], [string], "view">;
@@ -1033,13 +1033,13 @@ export interface ConsensusEngine extends BaseContract {
   >;
   getFunction(
     nameOrSignature: "detectOutliers"
-  ): TypedContractMethod<[roundId: BigNumberish], [string[]], "nonpayable">;
+  ): TypedContractMethod<[roundId: BigNumberish], [string[]], "view">;
   getFunction(
     nameOrSignature: "finalizeRound"
   ): TypedContractMethod<
     [roundId: BigNumberish],
     [IQuantlinkOracle.FeeDataStructOutput],
-    "nonpayable"
+    "view"
   >;
   getFunction(
     nameOrSignature: "getAggregationMethod"

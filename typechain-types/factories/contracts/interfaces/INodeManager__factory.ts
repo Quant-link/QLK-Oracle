@@ -393,6 +393,41 @@ const _abi = [
             name: "isBackup",
             type: "bool",
           },
+          {
+            internalType: "uint256",
+            name: "successfulSubmissions",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "failedSubmissions",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "averageResponseTime",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "uptime",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "lastDowntime",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "totalEarnings",
+            type: "uint256",
+          },
+          {
+            internalType: "uint8",
+            name: "performanceScore",
+            type: "uint8",
+          },
         ],
         internalType: "struct INodeManager.OracleNode",
         name: "",

@@ -1125,9 +1125,9 @@ export interface QuantlinkOracle extends BaseContract {
   >;
 
   updateUpdateInterval: TypedContractMethod<
-    [newInterval: BigNumberish],
+    [arg0: BigNumberish],
     [void],
-    "nonpayable"
+    "view"
   >;
 
   upgradeToAndCall: TypedContractMethod<
@@ -1332,7 +1332,7 @@ export interface QuantlinkOracle extends BaseContract {
   ): TypedContractMethod<[newThreshold: BigNumberish], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "updateUpdateInterval"
-  ): TypedContractMethod<[newInterval: BigNumberish], [void], "nonpayable">;
+  ): TypedContractMethod<[arg0: BigNumberish], [void], "view">;
   getFunction(
     nameOrSignature: "upgradeToAndCall"
   ): TypedContractMethod<

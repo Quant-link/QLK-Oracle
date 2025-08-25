@@ -139,6 +139,7 @@ export interface PriceFeedAdapterInterface extends Interface {
       | "supportsInterface"
       | "unsubscribeFromFeeUpdates"
       | "unsubscribeFromPriceUpdates"
+      | "updateCache"
       | "updateQualityMetrics"
       | "upgradeToAndCall"
       | "version"
@@ -343,6 +344,10 @@ export interface PriceFeedAdapterInterface extends Interface {
     values: [AddressLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "updateCache",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "updateQualityMetrics",
     values: [BigNumberish, BigNumberish, BigNumberish, BigNumberish]
   ): string;
@@ -509,6 +514,10 @@ export interface PriceFeedAdapterInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "unsubscribeFromPriceUpdates",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "updateCache",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -1092,6 +1101,8 @@ export interface PriceFeedAdapter extends BaseContract {
     "nonpayable"
   >;
 
+  updateCache: TypedContractMethod<[], [void], "nonpayable">;
+
   updateQualityMetrics: TypedContractMethod<
     [
       accuracy: BigNumberish,
@@ -1399,6 +1410,9 @@ export interface PriceFeedAdapter extends BaseContract {
   getFunction(
     nameOrSignature: "unsubscribeFromPriceUpdates"
   ): TypedContractMethod<[subscriber: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "updateCache"
+  ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "updateQualityMetrics"
   ): TypedContractMethod<

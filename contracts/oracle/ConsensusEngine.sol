@@ -226,6 +226,13 @@ contract ConsensusEngine is
         }
 
         result.method = _aggregationMethod;
+
+        // Store the aggregation result (state change)
+        _aggregationResults[roundId] = result;
+
+        // Update consensus status based on vote count
+        _consensusReached[roundId] = votes.length >= _consensusThreshold;
+
         return result;
     }
 
@@ -234,7 +241,7 @@ contract ConsensusEngine is
      * @param roundId Round to detect outliers for
      * @return outliers Array of outlier node addresses
      */
-    function detectOutliers(uint256 roundId) public override validRound(roundId) returns (address[] memory outliers) {
+    function detectOutliers(uint256 roundId) public view override validRound(roundId) returns (address[] memory outliers) {
         Vote[] memory votes = _roundVotes[roundId];
         
         if (votes.length < 3) {
@@ -290,7 +297,7 @@ contract ConsensusEngine is
      * @param roundId Round to finalize
      * @return finalData Final aggregated fee data
      */
-    function finalizeRound(uint256 roundId) external override validRound(roundId) returns (IQuantlinkOracle.FeeData memory finalData) {
+    function finalizeRound(uint256 roundId) external view override validRound(roundId) returns (IQuantlinkOracle.FeeData memory finalData) {
         require(_consensusReached[roundId], "Consensus not reached");
 
         AggregationResult memory result = _aggregationResults[roundId];
@@ -460,7 +467,7 @@ contract ConsensusEngine is
      * @dev Calculates consensus statistics for a round
      */
     function _calculateConsensusStats(
-        uint256 roundId,
+        uint256 /* roundId */,
         Vote[] memory votes,
         address[] memory outliers
     ) internal pure returns (ConsensusStats memory stats) {
@@ -613,7 +620,7 @@ contract ConsensusEngine is
     /**
      * @dev Authorizes contract upgrades (admin only)
      */
-    function _authorizeUpgrade(address newImplementation) internal override onlyRole(ADMIN_ROLE) {
+    function _authorizeUpgrade(address /* newImplementation */) internal override onlyRole(ADMIN_ROLE) {
         // Additional upgrade validation can be added here
     }
 
