@@ -971,6 +971,221 @@
       "artifacts": [
         "ConsensusEngine"
       ]
+    },
+    "/Users/baturalpguvenc/Documents/GitHub/QLK-Oracle-Contracts/contracts/oracle/SecurityManager.sol": {
+      "lastModificationDate": 1756142738567,
+      "contentHash": "2fbffec27dc233dce78e6e94c0dbfda5",
+      "sourceName": "contracts/oracle/SecurityManager.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol",
+        "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol",
+        "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol",
+        "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol",
+        "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol",
+        "../libraries/CryptoUtils.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.28"
+      ],
+      "artifacts": [
+        "SecurityManager"
+      ]
+    },
+    "/Users/baturalpguvenc/Documents/GitHub/QLK-Oracle-Contracts/contracts/oracle/AccessControlManager.sol": {
+      "lastModificationDate": 1756142792645,
+      "contentHash": "c851ddc3e5f12158a42754c07f4a07f9",
+      "sourceName": "contracts/oracle/AccessControlManager.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol",
+        "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol",
+        "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol",
+        "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.28"
+      ],
+      "artifacts": [
+        "AccessControlManager"
+      ]
+    },
+    "/Users/baturalpguvenc/Documents/GitHub/QLK-Oracle-Contracts/contracts/oracle/PriceFeedAdapter.sol": {
+      "lastModificationDate": 1756142966101,
+      "contentHash": "97902918a6a5c3940ab31456d1a079b6",
+      "sourceName": "contracts/oracle/PriceFeedAdapter.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol",
+        "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol",
+        "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol",
+        "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol",
+        "../interfaces/IPriceFeed.sol",
+        "../interfaces/IQuantlinkOracle.sol",
+        "../libraries/DataValidation.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.28"
+      ],
+      "artifacts": [
+        "PriceFeedAdapter"
+      ]
+    },
+    "/Users/baturalpguvenc/Documents/GitHub/QLK-Oracle-Contracts/contracts/interfaces/IPriceFeed.sol": {
+      "lastModificationDate": 1756142851462,
+      "contentHash": "7acf81dfa8d99f59c0bd1e19ea663293",
+      "sourceName": "contracts/interfaces/IPriceFeed.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.28"
+      ],
+      "artifacts": [
+        "IPriceFeed"
+      ]
+    },
+    "/Users/baturalpguvenc/Documents/GitHub/QLK-Oracle-Contracts/contracts/oracle/ProtocolIntegration.sol": {
+      "lastModificationDate": 1756143019001,
+      "contentHash": "e203fcd571f5df25ae0568e5c6e844ba",
+      "sourceName": "contracts/oracle/ProtocolIntegration.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol",
+        "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol",
+        "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol",
+        "../interfaces/IPriceFeed.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.28"
+      ],
+      "artifacts": [
+        "ProtocolIntegration"
+      ]
     }
   }
 }

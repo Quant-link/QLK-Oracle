@@ -3,4 +3,5 @@
 /* eslint-disable */
 export { IConsensusEngine__factory } from "./IConsensusEngine__factory";
 export { INodeManager__factory } from "./INodeManager__factory";
+export { IPriceFeed__factory } from "./IPriceFeed__factory";
 export { IQuantlinkOracle__factory } from "./IQuantlinkOracle__factory";

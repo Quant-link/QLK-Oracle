@@ -82,6 +82,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.INodeManager__factory>;
     getContractFactory(
+      name: "IPriceFeed",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IPriceFeed__factory>;
+    getContractFactory(
       name: "IQuantlinkOracle",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IQuantlinkOracle__factory>;
@@ -94,6 +98,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.DataValidation__factory>;
     getContractFactory(
+      name: "AccessControlManager",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AccessControlManager__factory>;
+    getContractFactory(
       name: "ConsensusEngine",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ConsensusEngine__factory>;
@@ -102,9 +110,21 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.NodeManager__factory>;
     getContractFactory(
+      name: "PriceFeedAdapter",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.PriceFeedAdapter__factory>;
+    getContractFactory(
+      name: "ProtocolIntegration",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ProtocolIntegration__factory>;
+    getContractFactory(
       name: "QuantlinkOracle",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.QuantlinkOracle__factory>;
+    getContractFactory(
+      name: "SecurityManager",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.SecurityManager__factory>;
 
     getContractAt(
       name: "AccessControlUpgradeable",
@@ -192,6 +212,11 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.INodeManager>;
     getContractAt(
+      name: "IPriceFeed",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IPriceFeed>;
+    getContractAt(
       name: "IQuantlinkOracle",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
@@ -207,6 +232,11 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.DataValidation>;
     getContractAt(
+      name: "AccessControlManager",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AccessControlManager>;
+    getContractAt(
       name: "ConsensusEngine",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
@@ -217,10 +247,25 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.NodeManager>;
     getContractAt(
+      name: "PriceFeedAdapter",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.PriceFeedAdapter>;
+    getContractAt(
+      name: "ProtocolIntegration",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ProtocolIntegration>;
+    getContractAt(
       name: "QuantlinkOracle",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.QuantlinkOracle>;
+    getContractAt(
+      name: "SecurityManager",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.SecurityManager>;
 
     deployContract(
       name: "AccessControlUpgradeable",
@@ -291,6 +336,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.INodeManager>;
     deployContract(
+      name: "IPriceFeed",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IPriceFeed>;
+    deployContract(
       name: "IQuantlinkOracle",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IQuantlinkOracle>;
@@ -303,6 +352,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.DataValidation>;
     deployContract(
+      name: "AccessControlManager",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.AccessControlManager>;
+    deployContract(
       name: "ConsensusEngine",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.ConsensusEngine>;
@@ -311,9 +364,21 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.NodeManager>;
     deployContract(
+      name: "PriceFeedAdapter",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.PriceFeedAdapter>;
+    deployContract(
+      name: "ProtocolIntegration",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ProtocolIntegration>;
+    deployContract(
       name: "QuantlinkOracle",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.QuantlinkOracle>;
+    deployContract(
+      name: "SecurityManager",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.SecurityManager>;
 
     deployContract(
       name: "AccessControlUpgradeable",
@@ -401,6 +466,11 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.INodeManager>;
     deployContract(
+      name: "IPriceFeed",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IPriceFeed>;
+    deployContract(
       name: "IQuantlinkOracle",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -416,6 +486,11 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.DataValidation>;
     deployContract(
+      name: "AccessControlManager",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.AccessControlManager>;
+    deployContract(
       name: "ConsensusEngine",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -426,10 +501,25 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.NodeManager>;
     deployContract(
+      name: "PriceFeedAdapter",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.PriceFeedAdapter>;
+    deployContract(
+      name: "ProtocolIntegration",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ProtocolIntegration>;
+    deployContract(
       name: "QuantlinkOracle",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.QuantlinkOracle>;
+    deployContract(
+      name: "SecurityManager",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.SecurityManager>;
 
     // default types
     getContractFactory(

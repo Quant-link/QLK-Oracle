@@ -3,4 +3,5 @@
 /* eslint-disable */
 export type { IConsensusEngine } from "./IConsensusEngine";
 export type { INodeManager } from "./INodeManager";
+export type { IPriceFeed } from "./IPriceFeed";
 export type { IQuantlinkOracle } from "./IQuantlinkOracle";
