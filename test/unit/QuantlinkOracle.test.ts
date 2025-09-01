@@ -59,7 +59,8 @@ describe("QuantlinkOracle", function () {
     )) as unknown as QuantlinkOracle;
 
     // Grant necessary roles
-    await nodeManager.grantRole(ADMIN_ROLE, await oracle.getAddress());
+    const ORACLE_ROLE = ethers.keccak256(ethers.toUtf8Bytes("ORACLE_ROLE"));
+    await nodeManager.grantRole(ORACLE_ROLE, await oracle.getAddress());
     await consensusEngine.grantRole(ADMIN_ROLE, await oracle.getAddress());
     await oracle.grantRole(CONSENSUS_ROLE, await consensusEngine.getAddress());
 

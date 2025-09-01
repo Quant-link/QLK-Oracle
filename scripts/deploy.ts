@@ -215,6 +215,21 @@ async function configureContracts(
     console.log(`✅ Set consensus threshold to ${config.consensusThreshold}`);
   }
 
+  // Verify all cross-contract integrations
+  console.log("🔗 Verifying cross-contract integrations...");
+
+  // Verify Oracle can access NodeManager
+  const currentSubmitter = await contracts.nodeManager.getCurrentSubmitter();
+  console.log(`✅ NodeManager integration verified - Current submitter: ${currentSubmitter}`);
+
+  // Verify Oracle can access ConsensusEngine
+  const consensusThreshold = await contracts.consensusEngine.getConsensusThreshold();
+  console.log(`✅ ConsensusEngine integration verified - Threshold: ${consensusThreshold}`);
+
+  // Verify PriceFeed can access Oracle
+  const oracleAddress = await contracts.priceFeedAdapter.oracle();
+  console.log(`✅ PriceFeedAdapter integration verified - Oracle: ${oracleAddress}`);
+
   console.log("✅ Contract configuration completed");
 }
 

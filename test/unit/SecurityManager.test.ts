@@ -151,7 +151,7 @@ describe("SecurityManager", function () {
       await securityManager.validateSubmission(maliciousNode.address, dataHash, signature);
 
       const newThreatLevel = await securityManager.getThreatLevel();
-      expect(newThreatLevel).to.equal(initialThreatLevel + 1);
+      expect(Number(newThreatLevel)).to.equal(Number(initialThreatLevel) + 1);
     });
 
     it("Should auto-blacklist nodes for severe threats", async function () {

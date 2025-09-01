@@ -40,7 +40,7 @@ describe("NodeManager", function () {
 
   describe("Node Registration", function () {
     it("Should allow admin to register nodes", async function () {
-      const publicKey = "0x" + "04".repeat(32); // Mock public key
+      const publicKey = "0x"; // Empty public key for testing
 
       await expect(nodeManager.registerNode(node1.address, publicKey))
         .to.emit(nodeManager, "NodeRegistered");

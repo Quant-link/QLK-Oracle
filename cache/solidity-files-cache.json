@@ -80,8 +80,8 @@
       ]
     },
     "/Users/baturalpguvenc/Documents/GitHub/QLK-Oracle-Contracts/contracts/oracle/QuantlinkOracle.sol": {
-      "lastModificationDate": 1756165957791,
-      "contentHash": "3c1775ddff2507a835ef903b12b039a1",
+      "lastModificationDate": 1756725024115,
+      "contentHash": "720f866ee0d81b7aa8155e6596369dbb",
       "sourceName": "contracts/oracle/QuantlinkOracle.sol",
       "solcConfig": {
         "version": "0.8.28",
