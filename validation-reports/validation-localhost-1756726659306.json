@@ -1,0 +1,170 @@
+{
+  "network": "localhost",
+  "timestamp": "2025-09-01T11:37:39.306Z",
+  "summary": {
+    "total": 18,
+    "passed": 18,
+    "warnings": 0,
+    "failed": 0,
+    "overallStatus": "HEALTHY"
+  },
+  "results": [
+    {
+      "component": "AccessControlManager",
+      "status": "PASS",
+      "message": "Contract successfully deployed",
+      "details": {
+        "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+        "codeSize": 342
+      }
+    },
+    {
+      "component": "SecurityManager",
+      "status": "PASS",
+      "message": "Contract successfully deployed",
+      "details": {
+        "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "codeSize": 342
+      }
+    },
+    {
+      "component": "NodeManager",
+      "status": "PASS",
+      "message": "Contract successfully deployed",
+      "details": {
+        "address": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+        "codeSize": 342
+      }
+    },
+    {
+      "component": "ConsensusEngine",
+      "status": "PASS",
+      "message": "Contract successfully deployed",
+      "details": {
+        "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+        "codeSize": 342
+      }
+    },
+    {
+      "component": "QuantlinkOracle",
+      "status": "PASS",
+      "message": "Contract successfully deployed",
+      "details": {
+        "address": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+        "codeSize": 342
+      }
+    },
+    {
+      "component": "PriceFeedAdapter",
+      "status": "PASS",
+      "message": "Contract successfully deployed",
+      "details": {
+        "address": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "codeSize": 342
+      }
+    },
+    {
+      "component": "ProtocolIntegration",
+      "status": "PASS",
+      "message": "Contract successfully deployed",
+      "details": {
+        "address": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+        "codeSize": 2336
+      }
+    },
+    {
+      "component": "Oracle Configuration",
+      "status": "PASS",
+      "message": "Consensus threshold: 6",
+      "details": {
+        "threshold": 6
+      }
+    },
+    {
+      "component": "Oracle Configuration",
+      "status": "PASS",
+      "message": "Update interval: 300 seconds",
+      "details": {
+        "updateInterval": 300
+      }
+    },
+    {
+      "component": "Oracle State",
+      "status": "PASS",
+      "message": "Current round: 1",
+      "details": {
+        "roundId": 1,
+        "submissionsCount": 0,
+        "consensusReached": false
+      }
+    },
+    {
+      "component": "Node Management",
+      "status": "PASS",
+      "message": "Active nodes: 10",
+      "details": {
+        "activeNodes": 10
+      }
+    },
+    {
+      "component": "Node Management",
+      "status": "PASS",
+      "message": "Current submitter: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "details": {
+        "currentSubmitter": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+      }
+    },
+    {
+      "component": "Node Management",
+      "status": "PASS",
+      "message": "Rotation interval: 300 seconds",
+      "details": {
+        "rotationInterval": 300,
+        "nextRotation": 1756726948
+      }
+    },
+    {
+      "component": "Security",
+      "status": "PASS",
+      "message": "Threat level: 0",
+      "details": {
+        "threatLevel": 0
+      }
+    },
+    {
+      "component": "Security",
+      "status": "PASS",
+      "message": "Under attack: false",
+      "details": {
+        "isUnderAttack": false
+      }
+    },
+    {
+      "component": "Security",
+      "status": "PASS",
+      "message": "System paused: false",
+      "details": {
+        "isPaused": false
+      }
+    },
+    {
+      "component": "Price Feed Integration",
+      "status": "PASS",
+      "message": "Chainlink compatibility verified",
+      "details": {
+        "decimals": 8,
+        "description": "Quantlink Oracle CEX/DEX Fee Data Feed",
+        "version": "1"
+      }
+    },
+    {
+      "component": "Price Feed Integration",
+      "status": "PASS",
+      "message": "Oracle connection: 0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+      "details": {
+        "connectedOracle": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+        "expectedOracle": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"
+      }
+    }
+  ]
+}

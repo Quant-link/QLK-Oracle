@@ -296,7 +296,8 @@ async function generateValidationReport(results: ValidationResult[]): Promise<vo
   const filename = `validation-${network.name}-${Date.now()}.json`;
   const filepath = path.join(reportsDir, filename);
   
-  fs.writeFileSync(filepath, JSON.stringify(report, null, 2));
+  fs.writeFileSync(filepath, JSON.stringify(report, (key, value) =>
+    typeof value === 'bigint' ? value.toString() : value, 2));
 
   // Console output
   console.log("\n🔍 PRODUCTION VALIDATION REPORT");

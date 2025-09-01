@@ -1,0 +1,13 @@
+{
+  "network": "localhost",
+  "timestamp": "2025-09-01T11:36:17.188Z",
+  "contracts": {
+    "AccessControlManager": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "SecurityManager": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "NodeManager": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+    "ConsensusEngine": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+    "QuantlinkOracle": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+    "PriceFeedAdapter": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+    "ProtocolIntegration": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82"
+  }
+}
