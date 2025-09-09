@@ -1,349 +1,516 @@
-/**
- * @fileoverview Dashboard Home Page with real-time data overview
- * @author QuantLink Team
- * @version 1.0.0
- */
+'use client';
 
-import { Suspense } from 'react';
-import { Metadata } from 'next';
-import { redirect } from 'next/navigation';
-import { DashboardShell } from '@/components/dashboard/dashboard-shell';
-import { DashboardHeader } from '@/components/dashboard/dashboard-header';
-import { DashboardContent } from '@/components/dashboard/dashboard-content';
-import { MetricsOverview } from '@/components/dashboard/metrics-overview';
-import { RealTimeChart } from '@/components/charts/real-time-chart';
-import { DataTable } from '@/components/data-table/data-table';
-import { ConnectionStatus } from '@/components/websocket/connection-status';
-import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
-import { ErrorBoundary } from '@/components/error-boundary';
+import { useEffect, useState } from 'react';
+import { useOracleData, useOracleActions } from '@/store/oracle-store';
+import { realTimeService } from '@/lib/services/real-time-service';
+import ConsensusMonitor from '@/components/consensus/ConsensusMonitor';
+import VotingVisualization from '@/components/consensus/VotingVisualization';
+import PerformanceMetrics from '@/components/performance/PerformanceMetrics';
 
-export const metadata: Metadata = {
-  title: 'Dashboard Overview',
-  description: 'Real-time overview of QuantLink Oracle data with live metrics and analytics.',
-};
+export default function Dashboard() {
+  const [isClient, setIsClient] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'consensus' | 'voting' | 'performance'>('overview');
+  const [selectedNetwork, setSelectedNetwork] = useState('ethereum');
+  const [backendOracleData, setBackendOracleData] = useState<any[]>([]);
+  const [backendLoading, setBackendLoading] = useState(true);
+  const [backendError, setBackendError] = useState<string | null>(null);
 
-// Force dynamic rendering for real-time data
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+  const {
+    oracleData,
+    marketData,
+    exchangeHealth,
+    connectionStatus,
+    isLoading,
+    error,
+    metrics
+  } = useOracleData();
 
-export default function DashboardPage() {
-  return (
-    <DashboardShell>
-      <DashboardHeader
-        title="Dashboard Overview"
-        description="Real-time monitoring of oracle data feeds and system metrics"
-      >
-        <ConnectionStatus />
-      </DashboardHeader>
+  const { setError } = useOracleActions();
 
-      <DashboardContent>
-        {/* Metrics Overview Section */}
-        <section 
-          className="space-y-6"
-          aria-labelledby="metrics-heading"
-        >
-          <h2 id="metrics-heading" className="sr-only">
-            System Metrics Overview
-          </h2>
-          
-          <ErrorBoundary fallback={<MetricsErrorFallback />}>
-            <Suspense fallback={<MetricsLoadingSkeleton />}>
-              <MetricsOverview />
-            </Suspense>
-          </ErrorBoundary>
-        </section>
+  // Ensure client-side only rendering for dynamic content
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
-        {/* Real-time Charts Section */}
-        <section 
-          className="space-y-6"
-          aria-labelledby="charts-heading"
-        >
-          <h2 id="charts-heading" className="text-2xl font-semibold tracking-tight">
-            Real-time Data Visualization
-          </h2>
-          
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* CEX Fee Chart */}
-            <ErrorBoundary fallback={<ChartErrorFallback title="CEX Fees" />}>
-              <Suspense fallback={<ChartLoadingSkeleton />}>
-                <RealTimeChart
-                  title="CEX Fee Trends"
-                  description="Real-time centralized exchange fee data"
-                  dataType="cex_fees"
-                  symbol="BTC/USDT"
-                  height={300}
-                  showLegend
-                  showTooltip
-                  enableZoom
-                  enablePan
-                />
-              </Suspense>
-            </ErrorBoundary>
+  useEffect(() => {
+    // Initialize real-time service only on client
+    if (!isClient) return;
 
-            {/* DEX Fee Chart */}
-            <ErrorBoundary fallback={<ChartErrorFallback title="DEX Fees" />}>
-              <Suspense fallback={<ChartLoadingSkeleton />}>
-                <RealTimeChart
-                  title="DEX Fee Trends"
-                  description="Real-time decentralized exchange fee data"
-                  dataType="dex_fees"
-                  symbol="BTC/USDT"
-                  height={300}
-                  showLegend
-                  showTooltip
-                  enableZoom
-                  enablePan
-                />
-              </Suspense>
-            </ErrorBoundary>
+    const initializeServices = async () => {
+      try {
+        if (!realTimeService.isServiceRunning()) {
+          await realTimeService.start();
+        }
+      } catch (error) {
+        console.error('Failed to initialize services:', error);
+        setError('Failed to initialize real-time services');
+      }
+    };
+
+    initializeServices();
+
+    // Cleanup on unmount
+    return () => {
+      // Don't stop services on component unmount as they should persist
+      // realTimeService.stop();
+    };
+  }, [isClient, setError]);
+
+  // Fetch oracle data from backend API
+  useEffect(() => {
+    if (!isClient) return;
+
+    const fetchOracleData = async () => {
+      try {
+        setBackendLoading(true);
+        const networks = ['ethereum', 'arbitrum', 'optimism', 'polygon', 'bsc'];
+        const promises = networks.map(network =>
+          fetch(`/api/blockchain?network=${network}&type=oracle`)
+            .then(res => res.ok ? res.json() : [])
+            .catch(() => [])
+        );
+
+        const results = await Promise.all(promises);
+        const allOracleData = results.flat();
+        setBackendOracleData(allOracleData);
+        setBackendError(null);
+      } catch (err) {
+        setBackendError('Failed to fetch oracle data');
+        console.error('Oracle data fetch error:', err);
+      } finally {
+        setBackendLoading(false);
+      }
+    };
+
+    fetchOracleData();
+    const interval = setInterval(fetchOracleData, 30000); // Update every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [isClient]);
+
+  // Show loading state during hydration
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-pure-white flex items-center justify-center">
+        <div className="brutal-border bg-pure-white p-8 max-w-md w-full">
+          <h1 className="text-2xl font-bold mb-4">QUANTLINK ORACLE</h1>
+          <div className="space-y-4">
+            <div className="loading-skeleton h-4 w-full"></div>
+            <div className="loading-skeleton h-4 w-3/4"></div>
+            <div className="loading-skeleton h-4 w-1/2"></div>
           </div>
-
-          {/* Combined Price Chart */}
-          <ErrorBoundary fallback={<ChartErrorFallback title="Price Data" />}>
-            <Suspense fallback={<ChartLoadingSkeleton />}>
-              <RealTimeChart
-                title="Price Aggregation"
-                description="Real-time price data from multiple sources"
-                dataType="price_data"
-                symbol="BTC/USDT"
-                height={400}
-                showLegend
-                showTooltip
-                enableZoom
-                enablePan
-                showVolume
-              />
-            </Suspense>
-          </ErrorBoundary>
-        </section>
-
-        {/* Data Tables Section */}
-        <section 
-          className="space-y-6"
-          aria-labelledby="tables-heading"
-        >
-          <h2 id="tables-heading" className="text-2xl font-semibold tracking-tight">
-            Live Data Feeds
-          </h2>
-          
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* Oracle Data Table */}
-            <ErrorBoundary fallback={<TableErrorFallback title="Oracle Data" />}>
-              <Suspense fallback={<TableLoadingSkeleton />}>
-                <DataTable
-                  title="Oracle Data"
-                  description="Aggregated oracle data with confidence scores"
-                  dataType="oracle_data"
-                  columns={[
-                    { key: 'symbol', label: 'Symbol', sortable: true },
-                    { key: 'weightedMedianCexFee', label: 'CEX Fee', sortable: true, format: 'percentage' },
-                    { key: 'weightedMedianDexFee', label: 'DEX Fee', sortable: true, format: 'percentage' },
-                    { key: 'confidence', label: 'Confidence', sortable: true, format: 'percentage' },
-                    { key: 'timestamp', label: 'Updated', sortable: true, format: 'time' },
-                  ]}
-                  pageSize={10}
-                  enableSearch
-                  enableFilters
-                  enableExport
-                  realTime
-                />
-              </Suspense>
-            </ErrorBoundary>
-
-            {/* Health Status Table */}
-            <ErrorBoundary fallback={<TableErrorFallback title="System Health" />}>
-              <Suspense fallback={<TableLoadingSkeleton />}>
-                <DataTable
-                  title="System Health"
-                  description="Real-time health status of data sources"
-                  dataType="health_status"
-                  columns={[
-                    { key: 'sourceId', label: 'Source', sortable: true },
-                    { key: 'healthState', label: 'Status', sortable: true, format: 'status' },
-                    { key: 'latencyMs', label: 'Latency', sortable: true, format: 'duration' },
-                    { key: 'uptimePercentage', label: 'Uptime', sortable: true, format: 'percentage' },
-                    { key: 'lastUpdate', label: 'Last Update', sortable: true, format: 'time' },
-                  ]}
-                  pageSize={10}
-                  enableSearch
-                  enableFilters
-                  realTime
-                />
-              </Suspense>
-            </ErrorBoundary>
-          </div>
-        </section>
-
-        {/* Performance Metrics Section */}
-        <section 
-          className="space-y-6"
-          aria-labelledby="performance-heading"
-        >
-          <h2 id="performance-heading" className="text-2xl font-semibold tracking-tight">
-            Performance Metrics
-          </h2>
-          
-          <div className="grid gap-6 md:grid-cols-3">
-            {/* WebSocket Metrics */}
-            <ErrorBoundary fallback={<MetricCardErrorFallback title="WebSocket" />}>
-              <Suspense fallback={<MetricCardLoadingSkeleton />}>
-                <WebSocketMetrics />
-              </Suspense>
-            </ErrorBoundary>
-
-            {/* Data Quality Metrics */}
-            <ErrorBoundary fallback={<MetricCardErrorFallback title="Data Quality" />}>
-              <Suspense fallback={<MetricCardLoadingSkeleton />}>
-                <DataQualityMetrics />
-              </Suspense>
-            </ErrorBoundary>
-
-            {/* System Performance */}
-            <ErrorBoundary fallback={<MetricCardErrorFallback title="System Performance" />}>
-              <Suspense fallback={<MetricCardLoadingSkeleton />}>
-                <SystemPerformanceMetrics />
-              </Suspense>
-            </ErrorBoundary>
-          </div>
-        </section>
-      </DashboardContent>
-    </DashboardShell>
-  );
-}
-
-// Loading Skeletons
-function MetricsLoadingSkeleton() {
-  return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="card p-6">
-          <div className="space-y-2">
-            <div className="h-4 w-24 loading-skeleton rounded" />
-            <div className="h-8 w-16 loading-skeleton rounded" />
-            <div className="h-3 w-32 loading-skeleton rounded" />
-          </div>
+          <p className="text-gray-700 mt-6 text-center">INITIALIZING SYSTEM...</p>
         </div>
-      ))}
-    </div>
-  );
-}
-
-function ChartLoadingSkeleton() {
-  return (
-    <div className="card p-6">
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <div className="h-6 w-32 loading-skeleton rounded" />
-          <div className="h-4 w-48 loading-skeleton rounded" />
-        </div>
-        <div className="h-64 w-full loading-skeleton rounded" />
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-function TableLoadingSkeleton() {
-  return (
-    <div className="card p-6">
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <div className="h-6 w-32 loading-skeleton rounded" />
-          <div className="h-4 w-48 loading-skeleton rounded" />
+  if (error || backendError) {
+    return (
+      <div className="min-h-screen bg-pure-white flex items-center justify-center">
+        <div className="brutal-border bg-pure-white p-8 max-w-md w-full">
+          <h1 className="text-2xl font-bold mb-4">SYSTEM ERROR</h1>
+          <p className="text-gray-700 mb-6">{error || backendError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="brutal-button w-full"
+          >
+            RELOAD SYSTEM
+          </button>
         </div>
-        <div className="space-y-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex space-x-4">
-              {Array.from({ length: 5 }).map((_, j) => (
-                <div key={j} className="h-4 flex-1 loading-skeleton rounded" />
-              ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-pure-white">
+      {/* Dashboard Header */}
+      <header className="brutal-border border-b-2 bg-pure-white p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight uppercase">
+              QUANTLINK ORACLE DASHBOARD
+            </h1>
+            <p className="text-gray-700 mt-2 font-medium">
+              Developed by Quantlink Team
+            </p>
+          </div>
+          <div className="flex items-center space-x-6">
+            <div className="text-right">
+              <div className="text-sm font-medium text-gray-600 uppercase">SYSTEM STATUS</div>
+              <div className="flex items-center space-x-2 mt-1">
+                <div className={`status-indicator ${isLoading ? 'status-degraded' : 'status-healthy'}`}></div>
+                <span className="font-mono text-sm">
+                  {isLoading ? 'LOADING' : 'OPERATIONAL'}
+                </span>
+              </div>
             </div>
+            <div className="text-right">
+              <div className="text-sm font-medium text-gray-600 uppercase">UPTIME</div>
+              <div className="font-mono text-lg font-bold">
+                {(metrics?.uptimePercentage || 100).toFixed(1)}%
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Navigation Tabs */}
+      <div className="brutal-border border-b-2 bg-pure-white p-2">
+        <div className="flex space-x-2">
+          {[
+            { id: 'overview', label: 'SYSTEM OVERVIEW' },
+            { id: 'consensus', label: 'CONSENSUS MONITOR' },
+            { id: 'voting', label: 'VOTING SYSTEM' },
+            { id: 'performance', label: 'PERFORMANCE METRICS' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`px-6 py-3 font-bold uppercase text-sm tracking-wide transition-all ${
+                activeTab === tab.id
+                  ? 'bg-pure-black text-pure-white'
+                  : 'bg-pure-white text-pure-black hover:bg-gray-100'
+              } brutal-border`}
+            >
+              {tab.label}
+            </button>
           ))}
         </div>
       </div>
+
+      {/* Network Selector for Consensus/Voting/Performance tabs */}
+      {activeTab !== 'overview' && (
+        <div className="brutal-border border-b bg-pure-white p-4">
+          <div className="flex items-center space-x-4">
+            <span className="font-bold uppercase text-sm tracking-wide">NETWORK:</span>
+            <div className="flex space-x-2">
+              {['ethereum', 'arbitrum', 'optimism', 'polygon', 'bsc'].map((network) => (
+                <button
+                  key={network}
+                  onClick={() => setSelectedNetwork(network)}
+                  className={`px-4 py-2 font-bold uppercase text-xs tracking-wide transition-all ${
+                    selectedNetwork === network
+                      ? 'bg-pure-black text-pure-white'
+                      : 'bg-pure-white text-pure-black hover:bg-gray-100'
+                  } brutal-border`}
+                >
+                  {network}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <main className="p-6 space-y-8">
+        {/* Conditional Content Based on Active Tab */}
+        {activeTab === 'overview' && (
+          <>
+            {/* Connection Status Grid */}
+            <section>
+          <h2 className="text-2xl font-bold mb-6 uppercase tracking-wide">
+            NETWORK CONNECTION STATUS
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {(connectionStatus || []).map((status) => (
+              <div key={status.network} className="metric-card">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold uppercase text-sm tracking-wide">
+                    {status.network}
+                  </h3>
+                  <div className={`status-indicator ${status.connected ? 'status-healthy' : 'status-offline'}`}></div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="metric-label">BLOCK</span>
+                    <span className="font-mono text-sm">{status.blockNumber.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="metric-label">LATENCY</span>
+                    <span className="font-mono text-sm">{status.latency}MS</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="metric-label">UPDATED</span>
+                    <span className="font-mono text-xs">{new Date(status.lastUpdate).toLocaleTimeString()}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {(!connectionStatus || connectionStatus.length === 0) && (
+              <div className="col-span-full text-center py-12">
+                <div className="loading-skeleton h-4 w-48 mx-auto mb-2"></div>
+                <div className="loading-skeleton h-4 w-32 mx-auto"></div>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Real-time Oracle Data */}
+        <section>
+          <h2 className="text-2xl font-bold mb-6 uppercase tracking-wide">
+            REAL-TIME ORACLE DATA
+          </h2>
+          <div className="data-grid">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    <th className="data-grid-header">SYMBOL</th>
+                    <th className="data-grid-header">PRICE USD</th>
+                    <th className="data-grid-header">NETWORK</th>
+                    <th className="data-grid-header">DECIMALS</th>
+                    <th className="data-grid-header">ROUND ID</th>
+                    <th className="data-grid-header">UPDATED</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(oracleData || []).map((data, index) => (
+                    <tr key={`${data.network}-${index}`} className="border-b border-gray-300">
+                      <td className="data-grid-cell font-bold">{data.description}</td>
+                      <td className="data-grid-cell font-mono">${data.priceUSD.toFixed(2)}</td>
+                      <td className="data-grid-cell uppercase">{data.network}</td>
+                      <td className="data-grid-cell font-mono">{data.decimals}</td>
+                      <td className="data-grid-cell font-mono">{data.roundId}</td>
+                      <td className="data-grid-cell font-mono text-xs">
+                        {new Date(data.updatedAt * 1000).toLocaleTimeString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {(!oracleData || oracleData.length === 0) && (
+                <div className="text-center py-12">
+                  <div className="loading-skeleton h-4 w-48 mx-auto mb-2"></div>
+                  <div className="loading-skeleton h-4 w-32 mx-auto"></div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* Exchange Health Status */}
+        <section>
+          <h2 className="text-2xl font-bold mb-6 uppercase tracking-wide">
+            EXCHANGE HEALTH STATUS
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {(exchangeHealth || []).map((health) => (
+              <div key={health.exchange} className="metric-card">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold uppercase text-sm tracking-wide">
+                    {health.exchange}
+                  </h3>
+                  <div className={`status-indicator ${
+                    health.status === 'HEALTHY' ? 'status-healthy' :
+                    health.status === 'DEGRADED' ? 'status-degraded' :
+                    health.status === 'UNHEALTHY' ? 'status-unhealthy' : 'status-offline'
+                  }`}></div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="metric-label">STATUS</span>
+                    <span className="font-mono text-sm">{health.status}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="metric-label">LATENCY</span>
+                    <span className="font-mono text-sm">{health.latency}MS</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="metric-label">UPTIME</span>
+                    <span className="font-mono text-sm">{health.uptimePercentage.toFixed(1)}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="metric-label">ERRORS</span>
+                    <span className="font-mono text-sm">{health.errorCount}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {(!exchangeHealth || exchangeHealth.length === 0) && (
+              <div className="col-span-full text-center py-12">
+                <div className="loading-skeleton h-4 w-48 mx-auto mb-2"></div>
+                <div className="loading-skeleton h-4 w-32 mx-auto"></div>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* System Metrics */}
+        <section>
+          <h2 className="text-2xl font-bold mb-6 uppercase tracking-wide">
+            SYSTEM METRICS
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="metric-card">
+              <div className="metric-label">TOTAL UPDATES</div>
+              <div className="metric-value">{(metrics?.totalUpdates || 0).toLocaleString()}</div>
+            </div>
+            <div className="metric-card">
+              <div className="metric-label">AVG LATENCY</div>
+              <div className="metric-value">{(metrics?.averageLatency || 0).toFixed(0)}MS</div>
+            </div>
+            <div className="metric-card">
+              <div className="metric-label">ERROR RATE</div>
+              <div className="metric-value">{(metrics?.errorRate || 0).toFixed(2)}%</div>
+            </div>
+            <div className="metric-card">
+              <div className="metric-label">UPTIME</div>
+              <div className="metric-value">{(metrics?.uptimePercentage || 100).toFixed(1)}%</div>
+            </div>
+          </div>
+        </section>
+
+        {/* Market Data Summary */}
+        <section>
+          <h2 className="text-2xl font-bold mb-6 uppercase tracking-wide">
+            MARKET DATA SUMMARY
+          </h2>
+          <div className="data-grid">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    <th className="data-grid-header">EXCHANGE</th>
+                    <th className="data-grid-header">SYMBOL</th>
+                    <th className="data-grid-header">PRICE</th>
+                    <th className="data-grid-header">VOLUME 24H</th>
+                    <th className="data-grid-header">SPREAD</th>
+                    <th className="data-grid-header">UPDATED</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(marketData || []).slice(0, 10).map((data, index) => (
+                    <tr key={`${data.exchange}-${data.symbol}-${index}`} className="border-b border-gray-300">
+                      <td className="data-grid-cell font-bold uppercase">{data.exchange}</td>
+                      <td className="data-grid-cell font-mono">{data.symbol}</td>
+                      <td className="data-grid-cell font-mono">${data.price.toFixed(2)}</td>
+                      <td className="data-grid-cell font-mono">{data.volume24h.toLocaleString()}</td>
+                      <td className="data-grid-cell font-mono">{data.spreadPercent.toFixed(3)}%</td>
+                      <td className="data-grid-cell font-mono text-xs">
+                        {new Date(data.timestamp).toLocaleTimeString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {(!marketData || marketData.length === 0) && (
+                <div className="text-center py-12">
+                  <div className="loading-skeleton h-4 w-48 mx-auto mb-2"></div>
+                  <div className="loading-skeleton h-4 w-32 mx-auto"></div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* System Operations */}
+        <section>
+          <h2 className="text-2xl font-bold mb-6 uppercase tracking-wide">
+            SYSTEM OPERATIONS
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <button
+              onClick={() => realTimeService.forceUpdate()}
+              className="brutal-button"
+              disabled={isLoading}
+            >
+              FORCE UPDATE
+            </button>
+            <button
+              onClick={() => window.open('http://localhost:3001/health', '_blank')}
+              className="brutal-button"
+            >
+              DATA SERVICE
+            </button>
+            <button
+              onClick={() => window.open('http://localhost:8080/health', '_blank')}
+              className="brutal-button"
+            >
+              ENTERPRISE API
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="brutal-button"
+            >
+              RELOAD SYSTEM
+            </button>
+          </div>
+        </section>
+          </>
+        )}
+
+        {/* Consensus Monitor Tab */}
+        {activeTab === 'consensus' && (
+          <ConsensusMonitor network={selectedNetwork} />
+        )}
+
+        {/* Voting Visualization Tab */}
+        {activeTab === 'voting' && (
+          <VotingVisualization network={selectedNetwork} />
+        )}
+
+        {/* Performance Metrics Tab */}
+        {activeTab === 'performance' && (
+          <PerformanceMetrics network={selectedNetwork} />
+        )}
+
+        {/* Real-time Oracle Data Section - Show backend data when available */}
+        {activeTab === 'overview' && (
+          <section>
+            <h2 className="text-2xl font-bold mb-6 uppercase tracking-wide">
+              REAL-TIME ORACLE DATA
+            </h2>
+            <div className="brutal-border bg-pure-white p-6">
+              {backendLoading ? (
+                <div className="text-center py-12">
+                  <div className="loading-skeleton h-4 w-48 mx-auto mb-2"></div>
+                  <div className="loading-skeleton h-4 w-32 mx-auto"></div>
+                  <p className="text-gray-600 mt-4">FETCHING BLOCKCHAIN DATA...</p>
+                </div>
+              ) : backendOracleData.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b-2 border-pure-black">
+                        <th className="data-grid-header">ASSET</th>
+                        <th className="data-grid-header">PRICE USD</th>
+                        <th className="data-grid-header">NETWORK</th>
+                        <th className="data-grid-header">DECIMALS</th>
+                        <th className="data-grid-header">ROUND ID</th>
+                        <th className="data-grid-header">UPDATED</th>
+                        <th className="data-grid-header">CONTRACT</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {backendOracleData.map((data, index) => (
+                        <tr key={`${data.network}-${data.symbol}-${index}`} className="border-b border-gray-300">
+                          <td className="data-grid-cell font-bold">{data.symbol}</td>
+                          <td className="data-grid-cell font-mono">${data.priceUSD.toFixed(2)}</td>
+                          <td className="data-grid-cell uppercase">{data.network}</td>
+                          <td className="data-grid-cell font-mono">{data.decimals}</td>
+                          <td className="data-grid-cell font-mono">{data.roundId}</td>
+                          <td className="data-grid-cell font-mono text-xs">
+                            {new Date(data.updatedAt * 1000).toLocaleTimeString()}
+                          </td>
+                          <td className="data-grid-cell font-mono text-xs">
+                            {data.contractAddress.slice(0, 8)}...{data.contractAddress.slice(-6)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <h3 className="font-bold text-lg mb-2">NO ORACLE DATA</h3>
+                  <p className="text-gray-600">Unable to fetch real-time oracle data</p>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+      </main>
     </div>
   );
 }
-
-function MetricCardLoadingSkeleton() {
-  return (
-    <div className="card p-6">
-      <div className="space-y-2">
-        <div className="h-4 w-24 loading-skeleton rounded" />
-        <div className="h-8 w-16 loading-skeleton rounded" />
-        <div className="h-3 w-32 loading-skeleton rounded" />
-      </div>
-    </div>
-  );
-}
-
-// Error Fallbacks
-function MetricsErrorFallback() {
-  return (
-    <div className="card p-6 border-destructive">
-      <div className="text-center space-y-2">
-        <p className="text-destructive font-medium">Failed to load metrics</p>
-        <p className="text-sm text-muted-foreground">Please refresh the page or check your connection</p>
-      </div>
-    </div>
-  );
-}
-
-function ChartErrorFallback({ title }: { title: string }) {
-  return (
-    <div className="card p-6 border-destructive">
-      <div className="text-center space-y-2">
-        <p className="text-destructive font-medium">Failed to load {title}</p>
-        <p className="text-sm text-muted-foreground">Chart data is temporarily unavailable</p>
-      </div>
-    </div>
-  );
-}
-
-function TableErrorFallback({ title }: { title: string }) {
-  return (
-    <div className="card p-6 border-destructive">
-      <div className="text-center space-y-2">
-        <p className="text-destructive font-medium">Failed to load {title}</p>
-        <p className="text-sm text-muted-foreground">Table data is temporarily unavailable</p>
-      </div>
-    </div>
-  );
-}
-
-function MetricCardErrorFallback({ title }: { title: string }) {
-  return (
-    <div className="card p-6 border-destructive">
-      <div className="text-center space-y-2">
-        <p className="text-destructive font-medium">Failed to load {title}</p>
-        <p className="text-sm text-muted-foreground">Metrics temporarily unavailable</p>
-      </div>
-    </div>
-  );
-}
-
-// Lazy-loaded components
-import dynamic from 'next/dynamic';
-
-const WebSocketMetrics = dynamic(
-  () => import('@/components/metrics/websocket-metrics'),
-  { 
-    loading: () => <MetricCardLoadingSkeleton />,
-    ssr: false 
-  }
-);
-
-const DataQualityMetrics = dynamic(
-  () => import('@/components/metrics/data-quality-metrics'),
-  { 
-    loading: () => <MetricCardLoadingSkeleton />,
-    ssr: false 
-  }
-);
-
-const SystemPerformanceMetrics = dynamic(
-  () => import('@/components/metrics/system-performance-metrics'),
-  { 
-    loading: () => <MetricCardLoadingSkeleton />,
-    ssr: false 
-  }
-);

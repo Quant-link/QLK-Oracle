@@ -76,7 +76,7 @@ const config: Config = {
         sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
-        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-space-grotesk)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-mono)', 'Consolas', 'Monaco', 'monospace'],
       },
       fontSize: {
