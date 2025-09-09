@@ -1,0 +1,296 @@
+syntax = "proto3";
+
+package quantlink.oracle;
+
+// Oracle data message types
+message OracleDataMessage {
+  oneof message_type {
+    PriceUpdate price_update = 1;
+    FeeUpdate fee_update = 2;
+    VolumeUpdate volume_update = 3;
+    HealthStatus health_status = 4;
+    MarketData market_data = 5;
+    AggregatedData aggregated_data = 6;
+  }
+  
+  uint64 timestamp = 100;
+  string message_id = 101;
+  uint32 sequence_number = 102;
+}
+
+// Price update from exchanges
+message PriceUpdate {
+  string symbol = 1;
+  string exchange = 2;
+  ExchangeType exchange_type = 3;
+  double price = 4;
+  double volume_24h = 5;
+  uint64 timestamp = 6;
+  double bid = 7;
+  double ask = 8;
+  double spread = 9;
+  uint32 confidence_score = 10;
+}
+
+// Fee update from exchanges
+message FeeUpdate {
+  string symbol = 1;
+  string exchange = 2;
+  ExchangeType exchange_type = 3;
+  double maker_fee = 4;
+  double taker_fee = 5;
+  double volume_24h = 6;
+  uint64 timestamp = 7;
+  uint32 confidence_score = 8;
+  FeeStructure fee_structure = 9;
+}
+
+// Volume update
+message VolumeUpdate {
+  string symbol = 1;
+  string exchange = 2;
+  ExchangeType exchange_type = 3;
+  double volume_24h = 4;
+  double volume_7d = 5;
+  double volume_30d = 6;
+  uint64 timestamp = 7;
+  repeated VolumeBreakdown volume_breakdown = 8;
+}
+
+// Health status of data sources
+message HealthStatus {
+  string source_id = 1;
+  SourceType source_type = 2;
+  HealthState health_state = 3;
+  uint64 last_update = 4;
+  double latency_ms = 5;
+  uint32 error_count = 6;
+  string error_message = 7;
+  double uptime_percentage = 8;
+}
+
+// Market data aggregation
+message MarketData {
+  string symbol = 1;
+  double weighted_price = 2;
+  double total_volume = 3;
+  uint32 source_count = 4;
+  repeated PriceUpdate sources = 5;
+  double price_deviation = 6;
+  uint64 timestamp = 7;
+  MarketTrend trend = 8;
+}
+
+// Aggregated oracle data
+message AggregatedData {
+  string symbol = 1;
+  
+  // CEX data
+  CexData cex_data = 2;
+  
+  // DEX data
+  DexData dex_data = 3;
+  
+  // Aggregated metrics
+  double weighted_median_cex_fee = 4;
+  double weighted_median_dex_fee = 5;
+  double confidence_score = 6;
+  uint64 timestamp = 7;
+  
+  // Quality metrics
+  QualityMetrics quality_metrics = 8;
+  
+  // Outlier detection
+  repeated string outlier_sources = 9;
+}
+
+// CEX specific data
+message CexData {
+  repeated double fees = 1;
+  repeated string exchanges = 2;
+  repeated double volumes = 3;
+  repeated uint32 confidence_scores = 4;
+  double average_fee = 5;
+  double median_fee = 6;
+  double weighted_average_fee = 7;
+}
+
+// DEX specific data
+message DexData {
+  repeated double fees = 1;
+  repeated string protocols = 2;
+  repeated double liquidity = 3;
+  repeated uint32 confidence_scores = 4;
+  double average_fee = 5;
+  double median_fee = 6;
+  double weighted_average_fee = 7;
+  repeated PoolData pool_data = 8;
+}
+
+// Pool data for DEX
+message PoolData {
+  string pool_address = 1;
+  string protocol = 2;
+  double liquidity_usd = 3;
+  double volume_24h = 4;
+  double fee_rate = 5;
+  double apy = 6;
+  uint64 last_update = 7;
+}
+
+// Quality metrics
+message QualityMetrics {
+  double data_freshness_score = 1;
+  double source_diversity_score = 2;
+  double volume_weighted_score = 3;
+  double outlier_detection_score = 4;
+  double overall_quality_score = 5;
+  uint32 total_sources = 6;
+  uint32 healthy_sources = 7;
+}
+
+// Volume breakdown by time periods
+message VolumeBreakdown {
+  string period = 1; // "1h", "4h", "1d", etc.
+  double volume = 2;
+  double change_percentage = 3;
+}
+
+// Fee structure details
+message FeeStructure {
+  repeated FeeTier fee_tiers = 1;
+  bool has_volume_discounts = 2;
+  bool has_token_discounts = 3;
+  double max_fee = 4;
+  double min_fee = 5;
+}
+
+// Fee tier information
+message FeeTier {
+  double volume_threshold = 1;
+  double maker_fee = 2;
+  double taker_fee = 3;
+}
+
+// Subscription management
+message SubscriptionMessage {
+  oneof action {
+    Subscribe subscribe = 1;
+    Unsubscribe unsubscribe = 2;
+    SubscriptionStatus status = 3;
+  }
+}
+
+message Subscribe {
+  repeated string channels = 1;
+  SubscriptionOptions options = 2;
+}
+
+message Unsubscribe {
+  repeated string channels = 1;
+}
+
+message SubscriptionStatus {
+  repeated string active_channels = 1;
+  uint32 total_subscriptions = 2;
+  uint64 last_update = 3;
+}
+
+message SubscriptionOptions {
+  bool include_historical = 1;
+  uint32 batch_size = 2;
+  uint32 update_frequency_ms = 3;
+  repeated string filters = 4;
+}
+
+// Authentication and authorization
+message AuthMessage {
+  oneof auth_type {
+    ApiKeyAuth api_key = 1;
+    JwtAuth jwt = 2;
+    Web3Auth web3 = 3;
+  }
+}
+
+message ApiKeyAuth {
+  string api_key = 1;
+  string api_secret = 2;
+}
+
+message JwtAuth {
+  string token = 1;
+  string refresh_token = 2;
+}
+
+message Web3Auth {
+  string wallet_address = 1;
+  string signature = 2;
+  string message = 3;
+  uint64 timestamp = 4;
+}
+
+// Error handling
+message ErrorMessage {
+  ErrorCode error_code = 1;
+  string error_message = 2;
+  string request_id = 3;
+  uint64 timestamp = 4;
+  map<string, string> error_details = 5;
+}
+
+// Heartbeat and connection management
+message HeartbeatMessage {
+  uint64 timestamp = 1;
+  string client_id = 2;
+  ConnectionMetrics metrics = 3;
+}
+
+message ConnectionMetrics {
+  double latency_ms = 1;
+  uint64 messages_sent = 2;
+  uint64 messages_received = 3;
+  uint64 bytes_sent = 4;
+  uint64 bytes_received = 5;
+  uint64 connection_time = 6;
+}
+
+// Enums
+enum ExchangeType {
+  EXCHANGE_TYPE_UNKNOWN = 0;
+  EXCHANGE_TYPE_CEX = 1;
+  EXCHANGE_TYPE_DEX = 2;
+}
+
+enum SourceType {
+  SOURCE_TYPE_UNKNOWN = 0;
+  SOURCE_TYPE_EXCHANGE = 1;
+  SOURCE_TYPE_AGGREGATOR = 2;
+  SOURCE_TYPE_ORACLE = 3;
+}
+
+enum HealthState {
+  HEALTH_STATE_UNKNOWN = 0;
+  HEALTH_STATE_HEALTHY = 1;
+  HEALTH_STATE_DEGRADED = 2;
+  HEALTH_STATE_UNHEALTHY = 3;
+  HEALTH_STATE_OFFLINE = 4;
+}
+
+enum MarketTrend {
+  MARKET_TREND_UNKNOWN = 0;
+  MARKET_TREND_BULLISH = 1;
+  MARKET_TREND_BEARISH = 2;
+  MARKET_TREND_SIDEWAYS = 3;
+}
+
+enum ErrorCode {
+  ERROR_CODE_UNKNOWN = 0;
+  ERROR_CODE_AUTHENTICATION_FAILED = 1;
+  ERROR_CODE_AUTHORIZATION_FAILED = 2;
+  ERROR_CODE_RATE_LIMIT_EXCEEDED = 3;
+  ERROR_CODE_INVALID_REQUEST = 4;
+  ERROR_CODE_INTERNAL_ERROR = 5;
+  ERROR_CODE_SERVICE_UNAVAILABLE = 6;
+  ERROR_CODE_DATA_NOT_FOUND = 7;
+  ERROR_CODE_SUBSCRIPTION_FAILED = 8;
+}
