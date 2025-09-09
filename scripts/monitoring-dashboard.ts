@@ -112,7 +112,7 @@ async function collectSystemMetrics(deployment: DeploymentInfo): Promise<SystemM
 function displayDashboard(metrics: SystemMetrics): void {
   console.clear();
 
-  // Premium Enterprise Dashboard Header
+  // Dashboard Header
   const headerLine = "─".repeat(88);
   const spacer = " ".repeat(88);
 

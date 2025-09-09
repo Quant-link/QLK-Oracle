@@ -57,7 +57,7 @@ class PremiumWebDashboard {
   }
 
   async initialize(): Promise<void> {
-    console.log("🚀 Initializing Premium Web Dashboard...");
+    console.log("Initializing Web Dashboard...");
     
     // Load deployment info
     this.deployment = await this.loadLatestDeployment();
@@ -67,7 +67,7 @@ class PremiumWebDashboard {
     
     // Start server
     this.server.listen(this.port, () => {
-      console.log(`✅ Premium Dashboard Server running at:`);
+      console.log(`✅ Quantlink Oracle Dashboard Server running at:`);
       console.log(`   http://localhost:${this.port}`);
       console.log(`   Network: ${network.name.toUpperCase()}`);
       console.log(`   Status: LIVE AND OPERATIONAL`);
@@ -467,7 +467,7 @@ class PremiumWebDashboard {
 
   async shutdown(): Promise<void> {
     if (this.server) {
-      console.log("🛑 Shutting down Premium Web Dashboard...");
+      console.log("🛑 Shutting down Oracle Web Dashboard...");
       this.server.close();
     }
   }
@@ -493,7 +493,7 @@ async function main() {
     });
     
   } catch (error) {
-    console.error("❌ Failed to start Premium Web Dashboard:", error);
+    console.error("❌ Failed to start Oracle Web Dashboard:", error);
     process.exit(1);
   }
 }
