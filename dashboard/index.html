@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quantlink Oracle | Enterprise Monitoring Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -28,12 +31,23 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: var(--primary-bg);
             color: var(--text-primary);
             line-height: 1.5;
             font-weight: 400;
             letter-spacing: -0.01em;
+            font-display: swap;
+        }
+
+        /* Ensure Space Grotesk loads properly */
+        * {
+            font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        /* Force font loading */
+        .header h1, .header h2, .card-title, .metric-label, .metric-value {
+            font-family: 'Space Grotesk', sans-serif !important;
         }
 
         .dashboard-container {
@@ -235,6 +249,16 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .chart-container canvas {
+            background: var(--primary-bg) !important;
+        }
     </style>
 </head>
 <body>
@@ -365,6 +389,161 @@
             </div>
         </div>
 
+        <!-- Detailed Oracle Data Section -->
+        <div class="grid" style="margin-top: var(--spacing-xxl);">
+            <!-- Latest Fee Data Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Latest Fee Data</div>
+                </div>
+                <div class="large-metric">
+                    <div class="large-metric-value" id="averageFee">--</div>
+                    <div class="large-metric-label">Average Fee (wei)</div>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">CEX Fees Count</span>
+                    <span class="metric-value" id="cexFeesCount">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">DEX Fees Count</span>
+                    <span class="metric-value" id="dexFeesCount">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Data Age</span>
+                    <span class="metric-value" id="dataAge">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Participating Nodes</span>
+                    <span class="metric-value" id="participatingNodes">--</span>
+                </div>
+            </div>
+
+            <!-- Consensus Statistics Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Consensus Statistics</div>
+                </div>
+                <div class="large-metric">
+                    <div class="large-metric-value" id="consensusThreshold">--</div>
+                    <div class="large-metric-label">Consensus Threshold</div>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Agreement Rate</span>
+                    <span class="metric-value" id="agreementPercentage">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Valid Votes</span>
+                    <span class="metric-value" id="validVotes">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Outlier Nodes</span>
+                    <span class="metric-value" id="outlierNodes">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Last Oracle Update</span>
+                    <span class="metric-value" id="lastOracleUpdate">--</span>
+                </div>
+            </div>
+
+            <!-- Round Details Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Round Details</div>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Round ID</span>
+                    <span class="metric-value" id="roundId">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Start Time</span>
+                    <span class="metric-value" id="roundStartTime">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">End Time</span>
+                    <span class="metric-value" id="roundEndTime">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Duration</span>
+                    <span class="metric-value" id="roundDuration">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Submissions Received</span>
+                    <span class="metric-value" id="submissionsReceived">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fee Data Visualization -->
+        <div class="grid" style="margin-top: var(--spacing-xxl);">
+            <div class="card" style="grid-column: 1 / -1;">
+                <div class="card-header">
+                    <div class="card-title">Fee Data Trends</div>
+                </div>
+                <div class="chart-container" style="padding: var(--spacing-lg); height: 400px; position: relative;">
+                    <canvas id="feeChart" style="width: 100%; height: 100%;"></canvas>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Chart Type</span>
+                    <span class="metric-value">Real-time Fee Comparison</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Data Points</span>
+                    <span class="metric-value" id="chartDataPoints">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Last Update</span>
+                    <span class="metric-value" id="chartLastUpdate">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Quality Metrics -->
+        <div class="grid" style="margin-top: var(--spacing-xxl);">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Data Quality</div>
+                </div>
+                <div class="large-metric">
+                    <div class="large-metric-value" id="dataConfidence">--</div>
+                    <div class="large-metric-label">Confidence Score</div>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Source Diversity</span>
+                    <span class="metric-value" id="sourceDiversity">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Data Variance</span>
+                    <span class="metric-value" id="dataVariance">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Reliability Score</span>
+                    <span class="metric-value" id="reliabilityScore">--</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Oracle Performance</div>
+                </div>
+                <div class="large-metric">
+                    <div class="large-metric-value" id="oracleUptime">--</div>
+                    <div class="large-metric-label">Uptime Percentage</div>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Successful Rounds</span>
+                    <span class="metric-value" id="successfulRounds">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Failed Rounds</span>
+                    <span class="metric-value" id="failedRounds">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Average Response Time</span>
+                    <span class="metric-value" id="avgResponseTime">--</span>
+                </div>
+            </div>
+        </div>
+
         <footer class="footer">
             <div class="footer-text">
                 Quantlink Oracle Enterprise Monitoring Dashboard | Real-time System Analytics
@@ -372,6 +551,7 @@
         </footer>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="dashboard.js"></script>
 </body>
 </html>

@@ -284,6 +284,15 @@ async function saveDeploymentInfo(contracts: DeployedContracts): Promise<void> {
       PriceFeedAdapter: await contracts.priceFeedAdapter.getAddress(),
       ProtocolIntegration: await contracts.protocolIntegration.getAddress(),
     },
+    transactionHashes: {
+      AccessControlManager: contracts.accessControlManager.deploymentTransaction()?.hash || 'N/A',
+      SecurityManager: contracts.securityManager.deploymentTransaction()?.hash || 'N/A',
+      NodeManager: contracts.nodeManager.deploymentTransaction()?.hash || 'N/A',
+      ConsensusEngine: contracts.consensusEngine.deploymentTransaction()?.hash || 'N/A',
+      QuantlinkOracle: contracts.quantlinkOracle.deploymentTransaction()?.hash || 'N/A',
+      PriceFeedAdapter: contracts.priceFeedAdapter.deploymentTransaction()?.hash || 'N/A',
+      ProtocolIntegration: contracts.protocolIntegration.deploymentTransaction()?.hash || 'N/A',
+    },
   };
 
   const fs = await import("fs");
@@ -319,10 +328,26 @@ async function main() {
     await saveDeploymentInfo(contracts);
 
     console.log("\n🎉 Quantlink Oracle deployment completed successfully!");
-    console.log("\n📋 Deployment Summary:");
-    console.log(`Network: ${network.name}`);
+    console.log("\n📋 Contract Addresses:");
+    console.log(`AccessControlManager: ${await contracts.accessControlManager.getAddress()}`);
+    console.log(`SecurityManager: ${await contracts.securityManager.getAddress()}`);
+    console.log(`NodeManager: ${await contracts.nodeManager.getAddress()}`);
+    console.log(`ConsensusEngine: ${await contracts.consensusEngine.getAddress()}`);
     console.log(`QuantlinkOracle: ${await contracts.quantlinkOracle.getAddress()}`);
     console.log(`PriceFeedAdapter: ${await contracts.priceFeedAdapter.getAddress()}`);
+    console.log(`ProtocolIntegration: ${await contracts.protocolIntegration.getAddress()}`);
+
+    console.log("\n📋 Transaction Hashes:");
+    console.log(`AccessControlManager: ${contracts.accessControlManager.deploymentTransaction()?.hash || 'N/A'}`);
+    console.log(`SecurityManager: ${contracts.securityManager.deploymentTransaction()?.hash || 'N/A'}`);
+    console.log(`NodeManager: ${contracts.nodeManager.deploymentTransaction()?.hash || 'N/A'}`);
+    console.log(`ConsensusEngine: ${contracts.consensusEngine.deploymentTransaction()?.hash || 'N/A'}`);
+    console.log(`QuantlinkOracle: ${contracts.quantlinkOracle.deploymentTransaction()?.hash || 'N/A'}`);
+    console.log(`PriceFeedAdapter: ${contracts.priceFeedAdapter.deploymentTransaction()?.hash || 'N/A'}`);
+    console.log(`ProtocolIntegration: ${contracts.protocolIntegration.deploymentTransaction()?.hash || 'N/A'}`);
+
+    console.log("\n📋 Deployment Summary:");
+    console.log(`Network: ${network.name}`);
     console.log(`Nodes registered: ${config.nodes.length}`);
     console.log(`Consensus threshold: ${config.consensusThreshold}`);
 

@@ -1,0 +1,22 @@
+{
+  "network": "localhost",
+  "timestamp": "2025-09-01T19:17:16.460Z",
+  "contracts": {
+    "AccessControlManager": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "SecurityManager": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "NodeManager": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+    "ConsensusEngine": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+    "QuantlinkOracle": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+    "PriceFeedAdapter": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+    "ProtocolIntegration": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82"
+  },
+  "transactionHashes": {
+    "AccessControlManager": "0x21191e8212e5a2b895a9d69af0c84e55da1ea2d069b19ed117c29b87b9d87fbc",
+    "SecurityManager": "0x57039ab20d89c4af1cba0a757da29610eaeb47144a1049247c5cacd80c2bd475",
+    "NodeManager": "0x16ddce96820db55844ce0845af82b45040d055b176c4337f6d1cb35a1f25b92c",
+    "ConsensusEngine": "0x8e984a8ed1e60f6ca4b14b9a4455c96d8d99c1e0f73c340653234483e91d8f91",
+    "QuantlinkOracle": "0xa39a9683efd6f1ffdb74d00e4ed1c2d5406af673fdf856c92c788b84998fe745",
+    "PriceFeedAdapter": "0x4e24c58ca458a67036839c76a7df3e511ac7dcb8581bb984199fa2c59f3ed380",
+    "ProtocolIntegration": "0x198d244894b32fcb6475e69242554c2848d32d39abad6764c1f904d6144c69fe"
+  }
+}

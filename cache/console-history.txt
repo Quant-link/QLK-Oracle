@@ -1,0 +1,29 @@
+.exit
+console.log("DEX Fees:", latestFeeData.dexFees.map(f => f.toString()));
+console.log("CEX Fees:", latestFeeData.cexFees.map(f => f.toString()));
+const latestFeeData = await oracle.getLatestFeeData();
+await oracle.connect(submitter).submitData(cexWei, dexWei, "0x");
+const dexWei = dexFees.map(bp => BigInt(bp) * BigInt(1e14));
+const cexWei = cexFees.map(bp => BigInt(bp) * BigInt(1e14));
+await oracle.connect(submitter).submitData(cexFeesWei, dexFeesWei, "0x");
+const dexFeesWei = dexFees.map(bp => BigInt(bp) * BigInt(1e14));
+const cexFeesWei = cexFees.map(bp => BigInt(bp) * BigInt(1e14));
+await oracle.connect(submitter).submitData(cexFeesWei, dexFeesWei, "0x");
+const dexFeesWei = dexFees.map(bp => bp * 1e14);
+const cexFeesWei = cexFees.map(bp => bp * 1e14);
+const dexFees = [220, 245, 210, 235, 250];
+const cexFees = [120, 135, 110, 125, 140]; // basis points in wei
+// Submit some real fee data
+const submitter = await ethers.getSigner("0x70997970C51812dc3A010C7d01b50e0d17dc79C8");
+const [signer] = await ethers.getSigners();
+const oracle = await ethers.getContractAt("QuantlinkOracle", "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318");
+.exit
+await priceFeed.description();
+const priceFeed = await ethers.getContractAt("PriceFeedAdapter", "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e");
+await oracle.getCurrentRound();
+const oracle = await ethers.getContractAt("QuantlinkOracle", "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318");
+npm run compile
+npx hardhat run scripts/deploy.ts --network localhost
+npm run deploy:localhost
+await oracle.getCurrentRound();
+const oracle = await ethers.getContractAt("QuantlinkOracle", "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318");
