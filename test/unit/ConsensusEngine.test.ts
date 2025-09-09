@@ -79,11 +79,7 @@ describe("ConsensusEngine", function () {
       [
         admin.address,
         await nodeManager.getAddress(),
-        await consensusEngine.getAddress(),
-        await accessControl.getAddress(),
-        ethers.ZeroAddress, // SecurityManager placeholder
-        6, // consensus threshold
-        300, // update interval
+        await consensusEngine.getAddress()
       ],
       { initializer: "initialize" }
     )) as unknown as QuantlinkOracle;
