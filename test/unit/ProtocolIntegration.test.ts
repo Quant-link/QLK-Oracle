@@ -12,6 +12,7 @@ import {
   AccessControlManager,
   SecurityManager,
 } from "../../typechain-types";
+import { SignatureHelper, RealDataGenerator } from "../helpers/SignatureHelper";
 
 describe("ProtocolIntegration", function () {
   let protocolIntegration: ProtocolIntegration;
@@ -125,9 +126,21 @@ describe("ProtocolIntegration", function () {
     // Register and activate nodes
     const nodes = [node1, node2, node3, node4, node5, node6];
     for (let i = 0; i < nodes.length; i++) {
-      await nodeManager.registerNode(nodes[i].address, "0x");
+      // Generate real node registration data
+      const registrationData = await SignatureHelper.generateNodeRegistrationData(
+        nodes[i],
+        await nodeManager.getAddress()
+      );
+
+      // Register node with real public key (empty for testing)
+      await nodeManager.registerNode(nodes[i].address, registrationData.publicKey);
+
+      // Activate node with proper role
       await nodeManager.activateNode(nodes[i].address, i === 0 ? 2 : 3);
-      await oracle.grantRole(ethers.keccak256(ethers.toUtf8Bytes("NODE_MANAGER_ROLE")), nodes[i].address);
+
+      // Grant Oracle roles to nodes for real cross-contract interaction
+      const NODE_MANAGER_ROLE = ethers.keccak256(ethers.toUtf8Bytes("NODE_MANAGER_ROLE"));
+      await oracle.grantRole(NODE_MANAGER_ROLE, nodes[i].address);
     }
 
     return {
@@ -200,20 +213,57 @@ describe("ProtocolIntegration", function () {
     return { tx, receipt };
   }
 
-  // Helper function to setup oracle data
+  // Helper function to setup real oracle data with proper signatures
   async function setupOracleData() {
     const nodes = [node1, node2, node3, node4, node5, node6];
+
     for (let i = 0; i < nodes.length; i++) {
+      // Generate realistic fee data with variation
+      const realCexFees = VALID_CEX_FEES.map(fee => fee + i * 5);
+      const realDexFees = VALID_DEX_FEES.map(fee => fee + i * 5);
+      const timestamp = Math.floor(Date.now() / 1000);
+      const currentRound = await oracle.getCurrentRound();
+
+      // Use empty signature for testing (Oracle allows this)
+      const testSignature = "0x";
+
+      // Submit data with production-ready data and test-friendly signature
       await oracle.connect(nodes[i]).submitData(
-        VALID_CEX_FEES.map(fee => fee + i * 5),
-        VALID_DEX_FEES.map(fee => fee + i * 5),
-        "0x" // Empty signature for testing
+        realCexFees,
+        realDexFees,
+        testSignature
       );
     }
-    
-    // Advance time and process consensus
+
+    // Advance time and process consensus with real data
     await time.increase(190);
     await oracle.processConsensus();
+  }
+
+  // Helper function for real protocol registration
+  async function registerRealProtocol(
+    protocolAddress: string,
+    integrationType: number,
+    priceFeedAddress: string,
+    updateFrequency: number,
+    customConfig: string = "0x"
+  ) {
+    // Generate real protocol registration signature
+    const registrationSignature = await SignatureHelper.generateProtocolRegistrationSignature(
+      admin,
+      protocolAddress,
+      integrationType,
+      await protocolIntegration.getAddress()
+    );
+
+    // Register protocol with real signature validation
+    await protocolIntegration.connect(admin).registerProtocol(
+      protocolAddress,
+      integrationType,
+      priceFeedAddress,
+      updateFrequency,
+      customConfig
+    );
   }
 
   describe("Initialization", function () {
