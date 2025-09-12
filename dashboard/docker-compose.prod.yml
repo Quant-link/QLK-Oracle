@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  quantlink-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      - ETHEREUM_RPC_URL=https://ethereum-rpc.publicnode.com
+      - ARBITRUM_RPC_URL=https://arbitrum-one-rpc.publicnode.com
+      - OPTIMISM_RPC_URL=https://optimism-rpc.publicnode.com
+      - POLYGON_RPC_URL=https://polygon-bor-rpc.publicnode.com
+      - BSC_RPC_URL=https://bsc-rpc.publicnode.com
+      - BEACON_CHAIN_API=https://beaconcha.in/api/v1
+      - HEIMDALL_API=https://heimdall-api.polygon.technology
+      - ETHERSCAN_API_KEY=${ETHERSCAN_API_KEY}
+      - POLYGONSCAN_API_KEY=${POLYGONSCAN_API_KEY}
+      - ARBISCAN_API_KEY=${ARBISCAN_API_KEY}
+      - BSCSCAN_API_KEY=${BSCSCAN_API_KEY}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - quantlink-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    networks:
+      - quantlink-network
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - quantlink-dashboard
+    restart: unless-stopped
+    networks:
+      - quantlink-network
+
+volumes:
+  redis_data:
+
+networks:
+  quantlink-network:
+    driver: bridge

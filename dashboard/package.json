@@ -6,7 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:prod": "NODE_ENV=production next build",
+    "start:prod": "NODE_ENV=production next start",
+    "deploy": "./deploy.sh",
+    "docker:build": "docker build -t quantlink-oracle-dashboard .",
+    "docker:run": "docker run -p 3000:3000 quantlink-oracle-dashboard",
+    "docker:prod": "docker-compose -f docker-compose.prod.yml up -d",
+    "docker:stop": "docker-compose -f docker-compose.prod.yml down",
+    "health": "curl -f http://localhost:3000/api/health",
+    "test:e2e": "echo 'E2E tests not implemented yet'",
+    "analyze": "ANALYZE=true npm run build"
   },
   "dependencies": {
     "@apollo/client": "^4.0.4",

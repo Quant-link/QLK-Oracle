@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { getNetworkConfig, getNetworkLogo, getNetworkDisplayName, getNetworkColor } from '@/lib/constants/networks';
 
 interface ConsensusData {
   network: string;
@@ -43,25 +44,96 @@ export default function ConsensusMonitor({ network }: ConsensusMonitorProps) {
     const fetchConsensusData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/blockchain?network=${network}&type=consensus`);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch consensus data: ${response.statusText}`);
-        }
-        const data = await response.json();
-        setConsensusData(data);
         setError(null);
+
+        console.log(`🔍 Fetching consensus data for ${network}...`);
+
+        const response = await fetch(`/api/blockchain?network=${network}&type=consensus`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+
+        const data = await response.json();
+
+        // Validate data structure
+        if (!data || typeof data !== 'object') {
+          throw new Error('Invalid consensus data format received');
+        }
+
+        // Ensure required fields exist
+        const validatedData = {
+          network: data.network || network,
+          totalNodes: Number(data.totalNodes) || 0,
+          activeNodes: Number(data.activeNodes) || 0,
+          consensusThreshold: Number(data.consensusThreshold) || 0,
+          participationRate: Number(data.participationRate) || 0,
+          currentRound: Number(data.currentRound) || 0,
+          finalityTime: Number(data.finalityTime) || 0,
+          blockHeight: Number(data.blockHeight) || 0,
+          votingPower: Number(data.votingPower) || 0,
+          validators: Array.isArray(data.validators) ? data.validators.map((v: any) => ({
+            address: String(v.address || '0x0'),
+            votingPower: Number(v.votingPower) || 0,
+            uptime: Number(v.uptime) || 0,
+            lastVote: Number(v.lastVote) || 0,
+            status: ['active', 'inactive', 'jailed'].includes(v.status) ? v.status : 'inactive'
+          })) : [],
+          rounds: Array.isArray(data.rounds) ? data.rounds.map((r: any) => ({
+            roundId: Number(r.roundId) || 0,
+            startTime: Number(r.startTime) || 0,
+            endTime: Number(r.endTime) || 0,
+            votes: Number(r.votes) || 0,
+            threshold: Number(r.threshold) || 0,
+            status: ['pending', 'completed', 'failed'].includes(r.status) ? r.status : 'pending',
+            participants: Array.isArray(r.participants) ? r.participants : []
+          })) : []
+        };
+
+        console.log(`✅ Successfully fetched consensus data for ${network}:`, {
+          totalNodes: validatedData.totalNodes,
+          activeNodes: validatedData.activeNodes,
+          validators: validatedData.validators.length,
+          rounds: validatedData.rounds.length
+        });
+
+        setConsensusData(validatedData);
+
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-        console.error('Consensus data fetch error:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+        console.error(`❌ Consensus data fetch error for ${network}:`, err);
+        setError(`Failed to load ${network} consensus data: ${errorMessage}`);
+
+        // Don't clear existing data on error, just show error message
+        if (!consensusData) {
+          setConsensusData(null);
+        }
       } finally {
         setLoading(false);
       }
     };
 
+    // Initial fetch
     fetchConsensusData();
-    const interval = setInterval(fetchConsensusData, 10000); // Update every 10 seconds
 
-    return () => clearInterval(interval);
+    // Set up polling interval based on network
+    const pollInterval = network === 'ethereum' ? 12000 : // 12 seconds for Ethereum
+                        network === 'polygon' ? 5000 :   // 5 seconds for Polygon
+                        network === 'bsc' ? 3000 :       // 3 seconds for BSC
+                        8000;                             // 8 seconds for others
+
+    const interval = setInterval(fetchConsensusData, pollInterval);
+
+    return () => {
+      clearInterval(interval);
+    };
   }, [network]);
 
   if (loading) {
@@ -90,13 +162,29 @@ export default function ConsensusMonitor({ network }: ConsensusMonitorProps) {
   const participationPercentage = (consensusData.activeNodes / consensusData.totalNodes) * 100;
   const consensusPercentage = (consensusData.activeNodes / consensusData.consensusThreshold) * 100;
 
+  const networkConfig = getNetworkConfig(network);
+  const networkLogo = getNetworkLogo(network);
+  const networkDisplayName = getNetworkDisplayName(network);
+
   return (
     <div className="space-y-6">
       {/* Network Overview */}
       <div className="brutal-border bg-pure-white p-6">
-        <h2 className="text-xl font-bold mb-6 uppercase tracking-wide">
-          {consensusData.network} CONSENSUS MONITOR
-        </h2>
+        <div className="flex items-center gap-4 mb-6">
+          {networkLogo && (
+            <img
+              src={networkLogo}
+              alt={networkDisplayName}
+              className="w-8 h-8 object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          )}
+          <h2 className="text-xl font-bold uppercase tracking-wide">
+            {networkDisplayName} CONSENSUS MONITOR
+          </h2>
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="metric-card">

@@ -6,6 +6,7 @@ import { realTimeService } from '@/lib/services/real-time-service';
 import ConsensusMonitor from '@/components/consensus/ConsensusMonitor';
 import VotingVisualization from '@/components/consensus/VotingVisualization';
 import PerformanceMetrics from '@/components/performance/PerformanceMetrics';
+import { getNetworkLogo, getNetworkDisplayName } from '@/lib/constants/networks';
 
 export default function Dashboard() {
   const [isClient, setIsClient] = useState(false);
@@ -185,19 +186,34 @@ export default function Dashboard() {
           <div className="flex items-center space-x-4">
             <span className="font-bold uppercase text-sm tracking-wide">NETWORK:</span>
             <div className="flex space-x-2">
-              {['ethereum', 'arbitrum', 'optimism', 'polygon', 'bsc'].map((network) => (
-                <button
-                  key={network}
-                  onClick={() => setSelectedNetwork(network)}
-                  className={`px-4 py-2 font-bold uppercase text-xs tracking-wide transition-all ${
-                    selectedNetwork === network
-                      ? 'bg-pure-black text-pure-white'
-                      : 'bg-pure-white text-pure-black hover:bg-gray-100'
-                  } brutal-border`}
-                >
-                  {network}
-                </button>
-              ))}
+              {['ethereum', 'arbitrum', 'optimism', 'polygon', 'bsc'].map((network) => {
+                const networkLogo = getNetworkLogo(network);
+                const networkDisplayName = getNetworkDisplayName(network);
+
+                return (
+                  <button
+                    key={network}
+                    onClick={() => setSelectedNetwork(network)}
+                    className={`px-4 py-2 font-bold uppercase text-xs tracking-wide transition-all flex items-center gap-2 ${
+                      selectedNetwork === network
+                        ? 'bg-pure-black text-pure-white'
+                        : 'bg-pure-white text-pure-black hover:bg-gray-100'
+                    } brutal-border`}
+                  >
+                    {networkLogo && (
+                      <img
+                        src={networkLogo}
+                        alt={networkDisplayName}
+                        className="w-4 h-4 object-contain"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    )}
+                    {network}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

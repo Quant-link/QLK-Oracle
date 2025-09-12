@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { getNetworkConfig, getNetworkLogo, getNetworkDisplayName, getNetworkColor } from '@/lib/constants/networks';
 
 interface VoteData {
   roundId: number;
@@ -37,10 +38,281 @@ export default function VotingVisualization({ network }: VotingVisualizationProp
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const generateVotingData = () => {
+    const fetchGovernanceData = async () => {
+      try {
+        setLoading(true);
+
+        console.log(`🗳️ Fetching governance data for ${network}...`);
+
+        const response = await fetch(`/api/blockchain?network=${network}&type=governance`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+
+        const data = await response.json();
+
+        // Process active proposals into voting rounds
+        if (data.activeProposals && data.activeProposals.length > 0) {
+          const activeProposal = data.activeProposals[0];
+          const now = Date.now() / 1000;
+
+          const currentVotingRound: VotingRound = {
+            roundId: activeProposal.id,
+            startTime: activeProposal.startTime,
+            endTime: activeProposal.endTime,
+            totalVotes: parseInt(activeProposal.totalVotes) || 0,
+            yesVotes: parseInt(activeProposal.forVotes) || 0,
+            noVotes: parseInt(activeProposal.againstVotes) || 0,
+            abstainVotes: parseInt(activeProposal.abstainVotes) || 0,
+            threshold: parseInt(activeProposal.quorum) || 0,
+            status: activeProposal.state === 'active' ? 'active' :
+                   activeProposal.state === 'succeeded' ? 'passed' :
+                   activeProposal.state === 'defeated' ? 'failed' : 'pending',
+            proposal: activeProposal.title || `Proposal ${activeProposal.id}`,
+            votingPowerUsed: parseInt(activeProposal.totalVotes) || 0,
+            totalVotingPower: parseInt(data.totalActiveVotingPower) || 10000000
+          };
+
+          setCurrentRound(currentVotingRound);
+        }
+
+        // Process recent votes
+        if (data.recentVotes && data.recentVotes.length > 0) {
+          const processedVotes: VoteData[] = data.recentVotes.map((vote: any) => ({
+            roundId: vote.proposalId,
+            validator: vote.voter,
+            vote: vote.support === 'for' ? 'yes' : vote.support === 'against' ? 'no' : 'abstain',
+            timestamp: vote.timestamp,
+            votingPower: parseInt(vote.votes) || 0,
+            blockHeight: vote.blockNumber || 0
+          }));
+
+          setRecentVotes(processedVotes);
+        }
+
+        // Generate voting history from proposals
+        if (data.activeProposals) {
+          const history: VotingRound[] = data.activeProposals.map((proposal: any) => ({
+            roundId: proposal.id,
+            startTime: proposal.startTime,
+            endTime: proposal.endTime,
+            totalVotes: parseInt(proposal.totalVotes) || 0,
+            yesVotes: parseInt(proposal.forVotes) || 0,
+            noVotes: parseInt(proposal.againstVotes) || 0,
+            abstainVotes: parseInt(proposal.abstainVotes) || 0,
+            threshold: parseInt(proposal.quorum) || 0,
+            status: proposal.state === 'active' ? 'active' :
+                   proposal.state === 'succeeded' ? 'passed' :
+                   proposal.state === 'defeated' ? 'failed' : 'pending',
+            proposal: proposal.title || `Proposal ${proposal.id}`,
+            votingPowerUsed: parseInt(proposal.totalVotes) || 0,
+            totalVotingPower: parseInt(data.totalActiveVotingPower) || 10000000
+          }));
+
+          setVotingHistory(history);
+        }
+
+      } catch (error) {
+        console.error(`❌ Error fetching governance data for ${network}:`, error);
+        throw error;
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const generateRealisticGovernanceData = () => {
+      console.log(`🎭 Generating realistic governance data for ${network}...`);
+
+      // Network-specific governance parameters
+      const governanceConfig = {
+        ethereum: {
+          protocols: ['Compound', 'Aave', 'Uniswap', 'ENS'],
+          avgProposals: 15,
+          avgVotingPower: 50000000,
+          participationRate: 0.12
+        },
+        polygon: {
+          protocols: ['Aave', 'QuickSwap', 'Polygon DAO'],
+          avgProposals: 8,
+          avgVotingPower: 25000000,
+          participationRate: 0.18
+        },
+        arbitrum: {
+          protocols: ['Arbitrum DAO', 'GMX', 'Camelot'],
+          avgProposals: 6,
+          avgVotingPower: 15000000,
+          participationRate: 0.15
+        },
+        bsc: {
+          protocols: ['PancakeSwap', 'Venus', 'BNB Chain'],
+          avgProposals: 10,
+          avgVotingPower: 30000000,
+          participationRate: 0.20
+        },
+        optimism: {
+          protocols: ['Optimism Collective', 'Synthetix', 'Velodrome'],
+          avgProposals: 7,
+          avgVotingPower: 20000000,
+          participationRate: 0.14
+        }
+      };
+
+      const config = governanceConfig[network as keyof typeof governanceConfig] || governanceConfig.ethereum;
+      const now = Date.now() / 1000;
+
+      // Generate active proposal
+      const proposalId = Math.floor(now / 86400); // Daily proposal ID
+      const protocol = config.protocols[Math.floor(Math.random() * config.protocols.length)];
+
+      const totalVotingPower = config.avgVotingPower * (0.8 + Math.random() * 0.4);
+      const votingPowerUsed = totalVotingPower * config.participationRate * (0.7 + Math.random() * 0.6);
+
+      // Realistic voting distribution
+      const yesVoteRatio = 0.65 + Math.random() * 0.25; // 65-90% yes votes typically
+      const yesVotes = Math.floor(votingPowerUsed * yesVoteRatio);
+      const noVotes = Math.floor(votingPowerUsed * (1 - yesVoteRatio) * 0.8);
+      const abstainVotes = Math.floor(votingPowerUsed - yesVotes - noVotes);
+
+      const currentVotingRound: VotingRound = {
+        roundId: proposalId,
+        startTime: now - 86400 * 3, // Started 3 days ago
+        endTime: now + 86400 * 4,   // Ends in 4 days
+        totalVotes: Math.floor(votingPowerUsed / 1000000), // Convert to millions for display
+        yesVotes,
+        noVotes,
+        abstainVotes,
+        threshold: Math.floor(totalVotingPower * 0.04), // 4% quorum typical
+        status: 'active',
+        proposal: `${protocol} Governance Proposal #${proposalId}: ${getRealisticProposalTitle(network)}`,
+        votingPowerUsed: Math.floor(votingPowerUsed),
+        totalVotingPower: Math.floor(totalVotingPower)
+      };
+
+      // Generate recent votes with realistic validator addresses
+      const recentVotes: VoteData[] = Array.from({ length: 25 }, (_, i) => {
+        const voteTime = now - (i * 1800) - Math.random() * 1800; // Every 30 minutes with variance
+        const validatorAddress = generateRealisticAddress(network, i);
+        const voteChoice = Math.random() < 0.7 ? 'yes' : Math.random() < 0.85 ? 'no' : 'abstain';
+
+        return {
+          roundId: proposalId - Math.floor(i / 8), // Spread across recent proposals
+          validator: validatorAddress,
+          vote: voteChoice,
+          timestamp: voteTime,
+          votingPower: Math.floor(Math.random() * 500000) + 50000, // 50K - 550K voting power
+          blockHeight: Math.floor(voteTime / 12) // Approximate block height
+        };
+      });
+
+      // Generate voting history
+      const votingHistory: VotingRound[] = Array.from({ length: 12 }, (_, i) => {
+        const historyProposalId = proposalId - i - 1;
+        const historyVotingPowerUsed = totalVotingPower * config.participationRate * (0.6 + Math.random() * 0.4);
+        const historyYesRatio = 0.55 + Math.random() * 0.35;
+        const historyYesVotes = Math.floor(historyVotingPowerUsed * historyYesRatio);
+        const historyNoVotes = Math.floor(historyVotingPowerUsed * (1 - historyYesRatio) * 0.85);
+        const historyAbstainVotes = Math.floor(historyVotingPowerUsed - historyYesVotes - historyNoVotes);
+
+        const passed = historyYesVotes > Math.floor(totalVotingPower * 0.04);
+
+        return {
+          roundId: historyProposalId,
+          startTime: now - 86400 * (7 * (i + 1)), // Weekly proposals
+          endTime: now - 86400 * (7 * (i + 1) - 7),
+          totalVotes: Math.floor(historyVotingPowerUsed / 1000000),
+          yesVotes: historyYesVotes,
+          noVotes: historyNoVotes,
+          abstainVotes: historyAbstainVotes,
+          threshold: Math.floor(totalVotingPower * 0.04),
+          status: passed ? 'passed' : 'failed',
+          proposal: `${protocol} Proposal #${historyProposalId}: ${getRealisticProposalTitle(network)}`,
+          votingPowerUsed: Math.floor(historyVotingPowerUsed),
+          totalVotingPower: Math.floor(totalVotingPower)
+        };
+      });
+
+      setCurrentRound(currentVotingRound);
+      setRecentVotes(recentVotes);
+      setVotingHistory(votingHistory);
+
+      console.log(`✅ Generated realistic governance data for ${network}:`, {
+        activeProposal: currentVotingRound.proposal,
+        recentVotes: recentVotes.length,
+        votingHistory: votingHistory.length,
+        participationRate: `${(config.participationRate * 100).toFixed(1)}%`
+      });
+    };
+
+    const getRealisticProposalTitle = (network: string): string => {
+      const proposals = {
+        ethereum: [
+          'Increase COMP Rewards Distribution',
+          'Update Liquidation Parameters',
+          'Add New Collateral Asset Support',
+          'Governance Token Emission Adjustment',
+          'Protocol Fee Structure Update'
+        ],
+        polygon: [
+          'Validator Commission Rate Adjustment',
+          'Bridge Security Enhancement',
+          'Staking Rewards Optimization',
+          'Network Upgrade Proposal',
+          'Cross-chain Integration'
+        ],
+        arbitrum: [
+          'ARB Token Distribution Plan',
+          'Sequencer Decentralization',
+          'Gas Fee Optimization',
+          'Developer Grant Program',
+          'Security Council Election'
+        ],
+        bsc: [
+          'Validator Set Expansion',
+          'Cross-chain Bridge Upgrade',
+          'BNB Burn Mechanism Update',
+          'DeFi Integration Enhancement',
+          'Network Performance Improvement'
+        ],
+        optimism: [
+          'Retroactive Public Goods Funding',
+          'Sequencer Revenue Sharing',
+          'OP Token Allocation',
+          'Fraud Proof System Update',
+          'Ecosystem Development Fund'
+        ]
+      };
+
+      const networkProposals = proposals[network as keyof typeof proposals] || proposals.ethereum;
+      return networkProposals[Math.floor(Math.random() * networkProposals.length)];
+    };
+
+    const generateRealisticAddress = (network: string, index: number): string => {
+      // Generate realistic-looking addresses based on known patterns
+      const prefixes = {
+        ethereum: '0x',
+        polygon: '0x',
+        arbitrum: '0x',
+        bsc: '0x',
+        optimism: '0x'
+      };
+
+      const prefix = prefixes[network as keyof typeof prefixes] || '0x';
+      const randomHex = Math.random().toString(16).substring(2, 42).padEnd(40, '0');
+      return prefix + randomHex;
+    };
+
+    const generateMockVotingData = () => {
       const now = Date.now() / 1000;
       const roundId = Math.floor(now / 300); // New round every 5 minutes
-      
+
       // Generate current active round
       const totalVotingPower = 10000000;
       const votingPowerUsed = Math.floor(totalVotingPower * (0.6 + Math.random() * 0.3));
@@ -100,11 +372,10 @@ export default function VotingVisualization({ network }: VotingVisualizationProp
       setCurrentRound(currentRoundData);
       setRecentVotes(votes);
       setVotingHistory(history);
-      setLoading(false);
     };
 
-    generateVotingData();
-    const interval = setInterval(generateVotingData, 5000); // Update every 5 seconds
+    fetchGovernanceData();
+    const interval = setInterval(fetchGovernanceData, 30000); // Update every 30 seconds
 
     return () => clearInterval(interval);
   }, [network]);
@@ -142,14 +413,29 @@ export default function VotingVisualization({ network }: VotingVisualizationProp
   const totalDuration = currentRound.endTime - currentRound.startTime;
   const progressPercentage = ((totalDuration - timeRemaining) / totalDuration) * 100;
 
+  const networkLogo = getNetworkLogo(network);
+  const networkDisplayName = getNetworkDisplayName(network);
+
   return (
     <div className="space-y-6">
       {/* Current Voting Round */}
       <div className="brutal-border bg-pure-white p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold uppercase tracking-wide">
-            ACTIVE VOTING ROUND #{currentRound.roundId}
-          </h2>
+          <div className="flex items-center gap-4">
+            {networkLogo && (
+              <img
+                src={networkLogo}
+                alt={networkDisplayName}
+                className="w-8 h-8 object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            )}
+            <h2 className="text-xl font-bold uppercase tracking-wide">
+              {networkDisplayName} VOTING ROUND #{currentRound.roundId}
+            </h2>
+          </div>
           <div className="flex items-center space-x-4">
             <span className={`px-3 py-1 text-sm font-bold uppercase ${
               currentRound.status === 'active' ? 'bg-blue-200 text-blue-800' :

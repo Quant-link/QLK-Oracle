@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ethers } from 'ethers';
+import { beaconChainService } from '@/lib/consensus/beacon-chain-api';
+import { polygonHeimdallService } from '@/lib/consensus/polygon-heimdall-api';
+import { bscValidatorService } from '@/lib/consensus/bsc-validator-api';
+import { governanceService } from '@/lib/governance/governance-api';
+import { blockchainMetricsService } from '@/lib/performance/blockchain-metrics-api';
 
 // Chainlink Price Feed ABI
 const PRICE_FEED_ABI = [
@@ -158,64 +163,193 @@ async function fetchConsensusData(network: string): Promise<ConsensusData> {
     throw new Error(`Unsupported network: ${network}`);
   }
 
-  const provider = new ethers.JsonRpcProvider(networkConfig.rpcUrl);
-  
   try {
-    const blockNumber = await provider.getBlockNumber();
-    const block = await provider.getBlock(blockNumber);
-    
-    // Generate realistic consensus data based on network characteristics
-    const baseValidators = network === 'ethereum' ? 500000 : 
-                          network === 'polygon' ? 100 :
-                          network === 'bsc' ? 21 : 50;
-    
-    const activeValidators = Math.floor(baseValidators * (0.85 + Math.random() * 0.1));
-    const currentTime = Math.floor(Date.now() / 1000);
-    
-    // Generate validator data
-    const validators = Array.from({ length: Math.min(20, activeValidators) }, (_, i) => ({
-      address: `0x${Math.random().toString(16).substr(2, 40)}`,
-      votingPower: Math.floor(Math.random() * 1000000) + 100000,
-      uptime: 95 + Math.random() * 5,
-      lastVote: currentTime - Math.floor(Math.random() * 300),
-      status: Math.random() > 0.05 ? 'active' as const : 
-              Math.random() > 0.5 ? 'inactive' as const : 'jailed' as const
-    }));
+    let consensusMetrics;
+    let validators: any[] = [];
+    let recentRounds: any[] = [];
 
-    // Generate recent rounds
-    const rounds = Array.from({ length: 10 }, (_, i) => {
-      const roundStartTime = currentTime - (i * 12) - Math.floor(Math.random() * 12);
-      const roundEndTime = roundStartTime + 6 + Math.floor(Math.random() * 6);
-      const votes = Math.floor(activeValidators * (0.7 + Math.random() * 0.25));
-      const threshold = Math.floor(activeValidators * 0.67);
-      
-      return {
-        roundId: blockNumber - i,
-        startTime: roundStartTime,
-        endTime: roundEndTime,
-        votes,
-        threshold,
-        status: votes >= threshold ? 'completed' as const : 
-                currentTime > roundEndTime ? 'failed' as const : 'pending' as const,
-        participants: validators.slice(0, votes).map(v => v.address)
-      };
-    });
+    // Fetch real consensus data based on network
+    switch (network) {
+      case 'ethereum':
+        consensusMetrics = await beaconChainService.getConsensusMetrics();
+        const topValidators = await beaconChainService.getTopValidators(20);
+        const recentSlots = await beaconChainService.getRecentSlots(10);
+
+        validators = topValidators.map(v => ({
+          address: v.pubkey.slice(0, 42), // Truncate pubkey to address format
+          votingPower: Math.floor(v.balance * 1000), // Convert ETH to voting power
+          uptime: 100 - (v.slashed ? 50 : 0), // Simplified uptime calculation
+          lastVote: Date.now() / 1000 - 12, // Assume recent vote
+          status: v.slashed ? 'jailed' as const :
+                  v.status === 'active_ongoing' ? 'active' as const : 'inactive' as const
+        }));
+
+        recentRounds = recentSlots.map(slot => ({
+          roundId: slot.slot,
+          startTime: slot.timestamp,
+          endTime: slot.timestamp + 12,
+          votes: slot.attestations,
+          threshold: Math.floor(consensusMetrics.activeValidators * 0.67),
+          status: slot.status === 'proposed' ? 'completed' as const : 'pending' as const,
+          participants: [`0x${slot.proposer.toString(16).padStart(40, '0')}`]
+        }));
+        break;
+
+      case 'polygon':
+        const polygonMetrics = await polygonHeimdallService.getConsensusMetrics();
+        const polygonValidators = await polygonHeimdallService.getValidatorSet();
+        const checkpointHistory = await polygonHeimdallService.getCheckpointHistory(10);
+
+        consensusMetrics = {
+          totalValidators: polygonMetrics.totalValidators,
+          activeValidators: polygonMetrics.activeValidators,
+          currentEpoch: polygonMetrics.currentEpoch,
+          participationRate: polygonMetrics.participationRate,
+          finalityDelay: 0, // Polygon doesn't have finality delay like Ethereum
+          networkUptime: polygonMetrics.networkUptime
+        };
+
+        validators = polygonValidators.slice(0, 20).map(v => ({
+          address: v.address,
+          votingPower: Math.floor(parseFloat(v.totalStaked) / 1000),
+          uptime: v.uptimePercent,
+          lastVote: Date.now() / 1000 - 128, // Polygon checkpoint time
+          status: v.status
+        }));
+
+        recentRounds = checkpointHistory.map(checkpoint => ({
+          roundId: checkpoint.checkpointNumber,
+          startTime: checkpoint.timestamp,
+          endTime: checkpoint.timestamp + 256 * 2, // Checkpoint duration
+          votes: polygonMetrics.activeValidators,
+          threshold: Math.floor(polygonMetrics.totalValidators * 0.67),
+          status: 'completed' as const,
+          participants: [checkpoint.proposer]
+        }));
+        break;
+
+      case 'bsc':
+        const bscMetrics = await bscValidatorService.getConsensusMetrics();
+        const bscValidators = await bscValidatorService.getValidatorSet();
+
+        consensusMetrics = {
+          totalValidators: bscMetrics.totalValidators,
+          activeValidators: bscMetrics.activeValidators,
+          currentEpoch: bscMetrics.currentEpoch,
+          participationRate: bscMetrics.participationRate,
+          finalityDelay: 0,
+          networkUptime: bscMetrics.networkUptime
+        };
+
+        validators = bscValidators.slice(0, 21).map(v => ({
+          address: v.address,
+          votingPower: v.votingPower,
+          uptime: v.uptime,
+          lastVote: Date.now() / 1000 - 3, // BSC block time
+          status: v.isJailed ? 'jailed' as const :
+                  v.isActive ? 'active' as const : 'inactive' as const
+        }));
+
+        // Generate recent rounds for BSC (simplified)
+        recentRounds = Array.from({ length: 10 }, (_, i) => ({
+          roundId: bscMetrics.blockHeight - i,
+          startTime: Date.now() / 1000 - (i * 3),
+          endTime: Date.now() / 1000 - (i * 3) + 3,
+          votes: bscMetrics.activeValidators,
+          threshold: Math.floor(bscMetrics.totalValidators * 0.67),
+          status: 'completed' as const,
+          participants: bscValidators.slice(0, 5).map(v => v.address)
+        }));
+        break;
+
+      default:
+        // Fallback for other networks (arbitrum, optimism)
+        const provider = new ethers.JsonRpcProvider(networkConfig.rpcUrl);
+        const blockNumber = await provider.getBlockNumber();
+
+        consensusMetrics = {
+          totalValidators: 50,
+          activeValidators: 45,
+          currentEpoch: Math.floor(blockNumber / 100),
+          participationRate: 90,
+          finalityDelay: 0,
+          networkUptime: 99.5
+        };
+
+        validators = Array.from({ length: 10 }, (_, i) => ({
+          address: `0x${(i + 1).toString(16).padStart(40, '0')}`,
+          votingPower: 1000000 + i * 100000,
+          uptime: 95 + Math.random() * 5,
+          lastVote: Date.now() / 1000 - Math.random() * 60,
+          status: 'active' as const
+        }));
+
+        recentRounds = Array.from({ length: 10 }, (_, i) => ({
+          roundId: blockNumber - i,
+          startTime: Date.now() / 1000 - (i * 12),
+          endTime: Date.now() / 1000 - (i * 12) + 12,
+          votes: 45,
+          threshold: 34,
+          status: 'completed' as const,
+          participants: validators.slice(0, 5).map(v => v.address)
+        }));
+    }
 
     return {
       network: networkConfig.name,
-      totalNodes: baseValidators,
-      activeNodes: activeValidators,
-      consensusThreshold: Math.floor(activeValidators * 0.67),
-      currentRound: blockNumber,
+      totalNodes: consensusMetrics.totalValidators,
+      activeNodes: consensusMetrics.activeValidators,
+      consensusThreshold: Math.floor(consensusMetrics.activeValidators * 0.67),
+      currentRound: consensusMetrics.currentEpoch,
       votingPower: validators.reduce((sum, v) => sum + v.votingPower, 0),
-      participationRate: (activeValidators / baseValidators) * 100,
-      finalityTime: network === 'ethereum' ? 384 : network === 'polygon' ? 128 : 64,
-      blockHeight: blockNumber,
+      participationRate: consensusMetrics.participationRate,
+      finalityTime: consensusMetrics.finalityDelay || 0,
+      blockHeight: consensusMetrics.currentEpoch,
       validators,
-      rounds
+      rounds: recentRounds
     };
   } catch (error) {
     console.error(`Failed to fetch consensus data for ${network}:`, error);
+    throw error;
+  }
+}
+
+async function fetchGovernanceData(network: string) {
+  try {
+    const [activeProposals, liveVotingData] = await Promise.all([
+      governanceService.getActiveProposals(network),
+      governanceService.getLiveVotingData(network)
+    ]);
+
+    return {
+      network,
+      activeProposals,
+      recentVotes: liveVotingData.recentVotes,
+      totalActiveVotingPower: liveVotingData.totalActiveVotingPower,
+      proposalCount: activeProposals.length
+    };
+  } catch (error) {
+    console.error(`Failed to fetch governance data for ${network}:`, error);
+    throw error;
+  }
+}
+
+async function fetchPerformanceData(network: string) {
+  try {
+    const [networkMetrics, networkHealth, performanceHistory] = await Promise.all([
+      blockchainMetricsService.getNetworkMetrics(network),
+      blockchainMetricsService.getNetworkHealth(network),
+      blockchainMetricsService.getPerformanceHistory(network, 2) // Last 2 hours
+    ]);
+
+    return {
+      network,
+      metrics: networkMetrics,
+      health: networkHealth,
+      history: performanceHistory
+    };
+  } catch (error) {
+    console.error(`Failed to fetch performance data for ${network}:`, error);
     throw error;
   }
 }
@@ -230,17 +364,28 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    if (type === 'consensus') {
-      const consensusData = await fetchConsensusData(network);
-      return NextResponse.json(consensusData);
-    } else {
-      const oracleData = await fetchOracleData(network);
-      return NextResponse.json(oracleData);
+    switch (type) {
+      case 'consensus':
+        const consensusData = await fetchConsensusData(network);
+        return NextResponse.json(consensusData);
+
+      case 'governance':
+        const governanceData = await fetchGovernanceData(network);
+        return NextResponse.json(governanceData);
+
+      case 'performance':
+        const performanceData = await fetchPerformanceData(network);
+        return NextResponse.json(performanceData);
+
+      case 'oracle':
+      default:
+        const oracleData = await fetchOracleData(network);
+        return NextResponse.json(oracleData);
     }
   } catch (error) {
-    console.error(`API Error for ${network}:`, error);
+    console.error(`API Error for ${network}/${type}:`, error);
     return NextResponse.json(
-      { error: `Failed to fetch ${type} data for ${network}` }, 
+      { error: `Failed to fetch ${type} data for ${network}` },
       { status: 500 }
     );
   }
